@@ -172,68 +172,87 @@
         });
     }
 
-    async function initSystem() {
-        let deviceId = localStorage.getItem('dgxen_device_id');
+    async function verifyAndRun() {
+        const params = new URLSearchParams(window.location.search);
+        const source = params.get('source');
+        const referrer = (document.referrer || "").toLowerCase();
         
+        // --- 1. Local Storage Bypass Check ---
+        const securePass = localStorage.getItem('dgxen_secure_pass');
+
+        const isValidAccess = (
+            securePass === 'true' || 
+            source === "official" ||
+            referrer.includes("earnlinks") ||
+            referrer.includes("vplink") ||
+            referrer.includes("steps.html")
+        );
+
+        if (!isValidAccess) {
+            document.getElementById('bypassContainer').style.display = "block";
+            return;
+        }
+
+        // Remove the pass immediately so they can't reuse it by refreshing
+        localStorage.removeItem('dgxen_secure_pass');
+
+        // Clean the URL bar silently
+        if (window.history.replaceState) {
+            const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+            window.history.replaceState({}, document.title, cleanUrl);
+        }
+
+        // --- 2. User Registration Check ---
+        let deviceId = localStorage.getItem('dgxen_device_id');
+
         if (!deviceId) {
-            // New User - Show Name Prompt
             document.getElementById('namePrompt').style.display = "block";
-            
-            document.getElementById('saveNameBtn').addEventListener('click', async () => {
+
+            document.getElementById('saveNameBtn').onclick = async () => {
                 const name = document.getElementById('userNameInput').value.trim();
-                if(name.length < 3) {
-                    document.getElementById('regStatus').innerText = "Name must be at least 3 characters!";
+                if (name.length < 2) {
+                    document.getElementById('regStatus').innerText = "Enter a valid name (min 2 letters)";
                     return;
                 }
-                
+
                 document.getElementById('regStatus').style.color = "white";
                 document.getElementById('regStatus').innerText = "Registering...";
-                
+
                 deviceId = generateUUID();
                 localStorage.setItem('dgxen_device_id', deviceId);
-                
-                // Save to Firebase
-                await set(ref(db, 'users/' + deviceId), {
-                    name: name,
-                    status: 'active',
-                    joined: new Date().toISOString()
-                });
-                
-                document.getElementById('namePrompt').style.display = "none";
-                checkSecurity(); 
-            });
-        } else {
-            // Returning User - Check Ban Status
-            const userRef = ref(db, 'users/' + deviceId);
-            const snapshot = await get(userRef);
-            
-            if (snapshot.exists()) {
-                const userData = snapshot.val();
-                if (userData.status === 'banned') {
-                    document.getElementById('bannedContainer').style.display = "block";
-                    return; // Stop execution if banned
+
+                try {
+                    await set(ref(db, 'users/' + deviceId), {
+                        name: name,
+                        status: 'active',
+                        joined: new Date().toISOString()
+                    });
+                } catch (e) {
+                    console.error("Firebase write error:", e);
                 }
+
+                document.getElementById('namePrompt').style.display = "none";
+                proceedToKey();
+            };
+        } else {
+            // Check Ban Status for existing user
+            try {
+                const userRef = ref(db, 'users/' + deviceId);
+                const snapshot = await get(userRef);
+                if (snapshot.exists() && snapshot.val().status === 'banned') {
+                    document.getElementById('bannedContainer').style.display = "block";
+                    return;
+                }
+            } catch (e) {
+                console.error("Firebase read error:", e);
             }
-            checkSecurity();
+            proceedToKey();
         }
     }
 
-    async function checkSecurity() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const source = urlParams.get('source');
-        const referrer = document.referrer;
-        
-        if (source === "official" || referrer.includes("earnlinks.io") || referrer.includes("lootdest.org") || referrer.includes("steps.html")) {
-            if (source === "official") {
-                const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
-                window.history.replaceState({}, document.title, cleanUrl);
-            }
-            document.getElementById('mainContainer').style.display = "block";
-            generateLockedKey(); 
-        } else {
-            document.getElementById('bypassContainer').style.display = "block";
-            document.getElementById('finalKey').innerText = "ACCESS DENIED";
-        }
+    function proceedToKey() {
+        document.getElementById('mainContainer').style.display = "block";
+        generateLockedKey();
     }
 
     async function generateLockedKey() {
@@ -245,7 +264,7 @@
             
             let day;
             try {
-                // 🔴 REPLACE THIS WITH YOUR RAW PASTEBIN LINK LATER 🔴
+                // Tumhara Pastebin Link
                 const pastebinResponse = await fetch('https://pastebin.com/raw/6TzV6L3G');
                 const pastebinData = await pastebinResponse.text();
                 day = parseInt(pastebinData.trim());
@@ -302,7 +321,7 @@
     });
 
     // Start everything on load
-    window.onload = initSystem;
+    window.onload = verifyAndRun;
 </script>
 </body>
 </html>
