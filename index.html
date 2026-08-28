@@ -246,7 +246,7 @@
             let day;
             try {
                 // 🔴 REPLACE THIS WITH YOUR RAW PASTEBIN LINK LATER 🔴
-                const pastebinResponse = await fetch('YOUR_PASTEBIN_RAW_URL');
+                const pastebinResponse = await fetch('https://pastebin.com/raw/6TzV6L3G');
                 const pastebinData = await pastebinResponse.text();
                 day = parseInt(pastebinData.trim());
                 if (isNaN(day)) throw new Error("Invalid Pastebin data");
