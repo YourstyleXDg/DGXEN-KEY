@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Key Generated | Unknown Modz</title>
+    <title>Key Generated | DGXEN</title>
     <style>
         :root { --bg: #000000; --card: #121212; --text: #ffffff; --accent: #00ff88; --error: #ff4444; }
         
@@ -30,148 +30,195 @@
         /* --- UI Visibility Controls --- */
         #mainContainer { display: none; }
         #bypassContainer { display: none; }
+        #bannedContainer { display: none; }
+        #namePrompt { display: none; }
 
-        /* --- BYPASS ERROR CARD --- */
+        /* --- CARDS & MODALS --- */
         .error-card { 
-            background: #1a0a0a; 
-            border: 1px solid #441111; 
-            border-radius: 28px; 
-            padding: 40px 30px; 
-            box-shadow: 0 10px 40px rgba(255,0,0,0.1);
+            background: #1a0a0a; border: 1px solid #441111; border-radius: 28px; 
+            padding: 40px 30px; box-shadow: 0 10px 40px rgba(255,0,0,0.1);
         }
         .error-icon { font-size: 50px; margin-bottom: 20px; }
         .error-title { color: var(--error); font-size: 24px; font-weight: bold; margin-bottom: 15px; }
 
+        .name-card {
+            background: var(--card); border: 1px solid var(--accent); border-radius: 24px; 
+            padding: 40px 30px; text-align: center; box-shadow: 0 15px 50px rgba(0,255,136,0.1);
+        }
+        
+        .name-input {
+            width: 90%; padding: 15px; margin: 20px 0; background: #000; 
+            border: 1px solid #333; color: white; border-radius: 12px; text-align: center; 
+            font-size: 16px;
+        }
+        .name-input:focus { outline: none; border-color: var(--accent); }
+
         .key-icon { 
-            background: #1a1a1a; 
-            width: 85px; 
-            height: 85px; 
-            border-radius: 50%; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            margin: -45px auto 15px; 
-            border: 1px solid #333; 
-            overflow: hidden; 
-            box-shadow: 0 0 25px rgba(0, 255, 136, 0.1);
-            position: relative;
-            z-index: 10;
+            background: #1a1a1a; width: 85px; height: 85px; border-radius: 50%; 
+            display: flex; justify-content: center; align-items: center; 
+            margin: -45px auto 15px; border: 1px solid #333; overflow: hidden; 
+            box-shadow: 0 0 25px rgba(0, 255, 136, 0.1); position: relative; z-index: 10;
         }
 
-        .key-icon img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        @media (min-width: 768px) {
-            .container { max-width: 450px; }
-            .key-icon { width: 110px; height: 110px; margin: -55px auto 20px; }
-        }
+        .key-icon img { width: 100%; height: 100%; object-fit: cover; }
 
         h1 { font-size: 28px; font-weight: bold; margin-bottom: 8px; }
         .subtitle { color: #888; font-size: 14px; margin-bottom: 30px; }
 
         .card { 
-            background: var(--card); 
-            border: 1px solid #222; 
-            border-radius: 28px; 
-            padding: 40px 30px 30px; 
-            text-align: center; 
-            box-shadow: 0 15px 50px rgba(0,0,0,0.6); 
-            position: relative;
+            background: var(--card); border: 1px solid #222; border-radius: 28px; 
+            padding: 40px 30px 30px; text-align: center; box-shadow: 0 15px 50px rgba(0,0,0,0.6); 
         }
 
         h2 { font-size: 22px; margin-bottom: 12px; color: var(--accent); font-weight: 700; }
         .card-p { color: #999; font-size: 14px; line-height: 1.6; margin-bottom: 25px; }
 
         .key-box { 
-            background: #000; 
-            padding: 22px; 
-            border-radius: 18px; 
-            border: 1px dashed var(--accent); 
-            margin-bottom: 25px; 
-            position: relative; 
-            overflow: hidden; 
+            background: #000; padding: 22px; border-radius: 18px; 
+            border: 1px dashed var(--accent); margin-bottom: 25px; 
         }
         
         #finalKey { 
-            color: var(--accent); 
-            font-family: 'Courier New', monospace; 
-            font-size: 19px; 
-            font-weight: bold; 
-            letter-spacing: 1px; 
+            color: var(--accent); font-family: 'Courier New', monospace; 
+            font-size: 19px; font-weight: bold; letter-spacing: 1px; 
         }
         
         .btn { 
-            width: 100%; 
-            padding: 18px; 
-            background: #ffffff; 
-            color: #000; 
-            border: none; 
-            border-radius: 16px; 
-            font-size: 16px; 
-            font-weight: 800; 
-            cursor: pointer; 
-            transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            width: 100%; padding: 18px; background: #ffffff; color: #000; 
+            border: none; border-radius: 16px; font-size: 16px; font-weight: 800; 
+            cursor: pointer; transition: 0.4s; 
         }
 
-        .btn:hover { 
-            transform: scale(1.03); 
-            background: var(--accent); 
-            box-shadow: 0 10px 20px rgba(0,255,136,0.2);
-        }
-
+        .btn:hover { background: var(--accent); transform: scale(1.03); }
         .btn-red { background: var(--error); color: white; margin-top: 20px; }
 
         .footer { 
-            margin-top: 80px; 
-            color: #333; 
-            font-size: 10px; 
-            letter-spacing: 2px; 
-            text-transform: uppercase; 
-            font-weight: bold; 
+            margin-top: 80px; color: #333; font-size: 10px; 
+            letter-spacing: 2px; text-transform: uppercase; font-weight: bold; 
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div id="mainContainer">
-        <div class="key-icon">
-            <img src="./assets/logo.png" alt="UKM">
-        </div>
-
-        <h1>Access Unlocked</h1>
-        <p class="subtitle">Your device-locked license key is ready.</p>
-
-        <div class="card">
-            <h2>Generation Success!</h2>
-            <p class="card-p">This key is locked to your device. Share it, and it won't work for others.</p>
-
-            <div class="key-box">
-                <span id="finalKey">SECURE FETCHING...</span>
-            </div>
-
-            <button class="btn" id="copyBtn" onclick="copyKey()">
-                COPY TO CLIPBOARD
-            </button>
+    
+    <!-- NAME REGISTRATION PROMPT -->
+    <div id="namePrompt">
+        <div class="name-card">
+            <h2 style="color: white;">Welcome to DGXEN</h2>
+            <p style="color: #888; font-size: 14px;">Please enter your name to register your device on our network.</p>
+            <input type="text" id="userNameInput" class="name-input" placeholder="Enter your name..." autocomplete="off">
+            <button class="btn" id="saveNameBtn">REGISTER DEVICE</button>
+            <p id="regStatus" style="color: var(--error); font-size: 12px; margin-top: 10px;"></p>
         </div>
     </div>
 
+    <!-- MAIN KEY GENERATOR -->
+    <div id="mainContainer">
+        <div class="key-icon">
+            <img src="./assets/logo.png" alt="DGXEN">
+        </div>
+        <h1>Access Unlocked</h1>
+        <p class="subtitle">Your device-locked license key is ready.</p>
+        <div class="card">
+            <h2>Generation Success!</h2>
+            <p class="card-p">This key is locked to your device. Share it, and it won't work for others.</p>
+            <div class="key-box">
+                <span id="finalKey">SECURE FETCHING...</span>
+            </div>
+            <button class="btn" id="copyBtn">COPY TO CLIPBOARD</button>
+        </div>
+    </div>
+
+    <!-- BANNED SCREEN -->
+    <div id="bannedContainer">
+        <div class="error-card">
+            <div class="error-icon">💀</div>
+            <div class="error-title">Account Banned</div>
+            <p style="color:#888; font-size: 14px; line-height: 1.5;">Your device has been permanently banned from the DGXEN network by the administrator.</p>
+        </div>
+    </div>
+
+    <!-- BYPASS SCREEN -->
     <div id="bypassContainer">
         <div class="error-card">
             <div class="error-icon">🚫</div>
             <div class="error-title">Bypass Detected!</div>
             <p style="color:#888; font-size: 14px; line-height: 1.5;">Direct access is prohibited. Please use the official link from the script to generate your key.</p>
-            <button class="btn btn-red" onclick="location.href='steps.html'">RETURN TO STEPS</button>
+            <button class="btn btn-red" id="returnBtn">RETURN TO STEPS</button>
         </div>
     </div>
 
-    <div class="footer">UNKNOWN MODZ SECURITY SYSTEM</div>
+    <div class="footer">DGXEN SECURITY SYSTEM</div>
 </div>
 
-<script>
+<!-- FIREBASE & LOGIC -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    // Your Firebase Config
+    const firebaseConfig = {
+        databaseURL: "https://login-pass-1a196-default-rtdb.firebaseio.com/"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // Generate a Random Device ID
+    function generateUUID() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+
+    async function initSystem() {
+        let deviceId = localStorage.getItem('dgxen_device_id');
+        
+        if (!deviceId) {
+            // New User - Show Name Prompt
+            document.getElementById('namePrompt').style.display = "block";
+            
+            document.getElementById('saveNameBtn').addEventListener('click', async () => {
+                const name = document.getElementById('userNameInput').value.trim();
+                if(name.length < 3) {
+                    document.getElementById('regStatus').innerText = "Name must be at least 3 characters!";
+                    return;
+                }
+                
+                document.getElementById('regStatus').style.color = "white";
+                document.getElementById('regStatus').innerText = "Registering...";
+                
+                deviceId = generateUUID();
+                localStorage.setItem('dgxen_device_id', deviceId);
+                
+                // Save to Firebase
+                await set(ref(db, 'users/' + deviceId), {
+                    name: name,
+                    status: 'active',
+                    joined: new Date().toISOString()
+                });
+                
+                document.getElementById('namePrompt').style.display = "none";
+                checkSecurity(); // Proceed to generation
+            });
+        } else {
+            // Returning User - Check Ban Status
+            const userRef = ref(db, 'users/' + deviceId);
+            const snapshot = await get(userRef);
+            
+            if (snapshot.exists()) {
+                const userData = snapshot.val();
+                if (userData.status === 'banned') {
+                    document.getElementById('bannedContainer').style.display = "block";
+                    return; // Stop everything
+                }
+            }
+            // User is active, proceed to security check
+            checkSecurity();
+        }
+    }
+
     async function checkSecurity() {
         const urlParams = new URLSearchParams(window.location.search);
         const source = urlParams.get('source');
@@ -185,54 +232,59 @@
             document.getElementById('mainContainer').style.display = "block";
             generateLockedKey(); 
         } else {
-            document.getElementById('mainContainer').style.display = "none";
             document.getElementById('bypassContainer').style.display = "block";
             document.getElementById('finalKey').innerText = "ACCESS DENIED";
         }
     }
 
     async function generateLockedKey() {
-    try {
-        const response = await fetch('https://api.ipify.org?format=json');
-        const data = await response.json();
-        const ip = data.ip;
-
-        // Aaj ki Date (Daily expiry ke liye)
-        const day = Math.floor(Date.now() / 86400000);
-        const ipSeed = parseInt(ip.replace(/\./g, '').substring(0, 6)); 
-        
-        // Seed: IP + Date + Year (Ye App se match hona chahiye)
-        let seed = ipSeed + day + 2026; 
-        
-        function rnd() { 
-            var x = Math.sin(seed++) * 10000; 
-            return Math.abs(x - Math.floor(x)); 
-        }
-        
-        const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-        let segments = [];
-        for(let i=0; i<4; i++) {
-            let s = "";
-            for(let j=0; j<4; j++) {
-                let r = Math.floor(rnd() * chars.length);
-                s += chars.charAt(r);
+        try {
+            const response = await fetch('https://api.ipify.org?format=json');
+            const data = await response.json();
+            const ip = data.ip;
+            const ipSeed = parseInt(ip.replace(/\./g, '').substring(0, 6)); 
+            
+            let day;
+            try {
+                // Keep your pastebin link here when you have it!
+                const pastebinResponse = await fetch('https://pastebin.com/raw/YOUR_PASTE_ID');
+                const pastebinData = await pastebinResponse.text();
+                day = parseInt(pastebinData.trim());
+                if (isNaN(day)) throw new Error("Invalid Pastebin data");
+            } catch(e) {
+                day = Math.floor(Date.now() / 86400000);
             }
-            segments.push(s);
+            
+            let seed = ipSeed + day + 2026; 
+            
+            function rnd() { 
+                var x = Math.sin(seed++) * 10000; 
+                return Math.abs(x - Math.floor(x)); 
+            }
+            
+            const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+            let segments = [];
+            for(let i=0; i<4; i++) {
+                let s = "";
+                for(let j=0; j<4; j++) {
+                    let r = Math.floor(rnd() * chars.length);
+                    s += chars.charAt(r);
+                }
+                segments.push(s);
+            }
+
+            const finalKey = "UKM-" + segments.join("-");
+            document.getElementById('finalKey').innerText = finalKey;
+
+        } catch (err) {
+            document.getElementById('finalKey').innerText = "CONNECT TO INTERNET";
         }
-
-        const finalKey = "UKM-" + segments.join("-");
-        document.getElementById('finalKey').innerText = finalKey;
-
-    } catch (err) {
-        document.getElementById('finalKey').innerText = "CONNECT TO INTERNET";
     }
-}
 
-
-
-    function copyKey() {
+    // Event Listeners for buttons since we are using modules
+    document.getElementById('copyBtn').addEventListener('click', () => {
         const keyText = document.getElementById('finalKey').innerText;
-        if(keyText.includes("SECURE") || keyText.includes("CONNECT")) return;
+        if(keyText.includes("SECURE") || keyText.includes("CONNECT") || keyText.includes("DENIED")) return;
 
         navigator.clipboard.writeText(keyText).then(() => {
             const btn = document.getElementById('copyBtn');
@@ -243,9 +295,14 @@
                 btn.style.background = "#ffffff";
             }, 2000);
         });
-    }
+    });
 
-    window.onload = checkSecurity;
+    document.getElementById('returnBtn').addEventListener('click', () => {
+        location.href = 'steps.html';
+    });
+
+    // Start everything when page loads
+    window.onload = initSystem;
 </script>
 </body>
 </html>
