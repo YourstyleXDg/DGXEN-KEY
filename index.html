@@ -157,7 +157,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    // Your Firebase Config
+    // Linked to your Firebase Realtime DB
     const firebaseConfig = {
         databaseURL: "https://login-pass-1a196-default-rtdb.firebaseio.com/"
     };
@@ -200,7 +200,7 @@
                 });
                 
                 document.getElementById('namePrompt').style.display = "none";
-                checkSecurity(); // Proceed to generation
+                checkSecurity(); 
             });
         } else {
             // Returning User - Check Ban Status
@@ -211,10 +211,9 @@
                 const userData = snapshot.val();
                 if (userData.status === 'banned') {
                     document.getElementById('bannedContainer').style.display = "block";
-                    return; // Stop everything
+                    return; // Stop execution if banned
                 }
             }
-            // User is active, proceed to security check
             checkSecurity();
         }
     }
@@ -246,12 +245,13 @@
             
             let day;
             try {
-                // Keep your pastebin link here when you have it!
-                const pastebinResponse = await fetch('https://pastebin.com/raw/YOUR_PASTE_ID');
+                // 🔴 REPLACE THIS WITH YOUR RAW PASTEBIN LINK LATER 🔴
+                const pastebinResponse = await fetch('YOUR_PASTEBIN_RAW_URL');
                 const pastebinData = await pastebinResponse.text();
                 day = parseInt(pastebinData.trim());
                 if (isNaN(day)) throw new Error("Invalid Pastebin data");
             } catch(e) {
+                // Fallback to local date if Pastebin isn't working
                 day = Math.floor(Date.now() / 86400000);
             }
             
@@ -281,7 +281,7 @@
         }
     }
 
-    // Event Listeners for buttons since we are using modules
+    // Button Listeners
     document.getElementById('copyBtn').addEventListener('click', () => {
         const keyText = document.getElementById('finalKey').innerText;
         if(keyText.includes("SECURE") || keyText.includes("CONNECT") || keyText.includes("DENIED")) return;
@@ -301,8 +301,11 @@
         location.href = 'steps.html';
     });
 
-    // Start everything when page loads
+    // Start everything on load
     window.onload = initSystem;
 </script>
 </body>
 </html>
+
+
+
