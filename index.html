@@ -279,64 +279,101 @@
         generateLockedKey();
     }
 
-        async function generateLockedKey() {
+            async function generateLockedKey() {
         try {
-            // IP aur Pastebin fetch karne wala zaroori code jo miss ho gaya tha
-            const response = await fetch('https://api.ipify.org?format=json');
-            const data = await response.json();
-            const ip = data.ip;
-            const ipSeed = parseInt(ip.replace(/\./g, '').substring(0, 6)); 
-            
-            let day;
-            try {
-                const pastebinResponse = await fetch('https://pastebin.com/raw/6TzV6L3G');
-                const pastebinData = await pastebinResponse.text();
-                day = parseInt(pastebinData.trim());
-                if (isNaN(day)) throw new Error("Invalid Pastebin data");
-            } catch(e) {
-                day = Math.floor(Date.now() / 86400000);
+            document.getElementById('finalKey').innerText = "GENERATING...";
+
+            const deviceId = localStorage.getItem('dgxen_device_id');
+            if(!deviceId) {
+                // Agar ID nahi hai, toh page reload karke register karne bolega
+                location.reload(); 
+                return;
             }
-            
-            let seed = ipSeed + day + 2026; 
-            
-            function rnd() { 
-                var x = Math.sin(seed++) * 10000; 
-                return Math.abs(x - Math.floor(x)); 
-            }
-            
-            const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-            let segments = [];
-            for(let i=0; i<4; i++) {
-                let s = "";
-                for(let j=0; j<4; j++) {
-                    let r = Math.floor(rnd() * chars.length);
-                    s += chars.charAt(r);
+
+            // Firebase se data fetch karke Key aur Expiry set karna
+            import('https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js').then(async (module) => {
+                const { ref, get, update } = module;
+
+                // 1. Admin Panel se set kiya hua Expiry Time check karo (Agar error ho toh default 24 ghante)
+                const settingsSnap = await get(ref(db, 'settings/keyExpiryHours'));
+                const expiryHours = settingsSnap.exists() ? settingsSnap.val() : 24;
+
+                // 2. User ka profile data check karo
+                const userRef = ref(db, 'users/' + deviceId);
+                const userSnap = await get(userRef);
+                
+                if (userSnap.exists()) {
+                    const userData = userSnap.val();
+                    const now = Date.now();
+
+                    // Agar user ke paas pehle se key hai aur wo expire NAHI hui hai, toh purani wali hi dikhao
+                    if (userData.lastGeneratedKey && userData.keyExpiresAt && now < userData.keyExpiresAt) {
+                        displayKeyInfo(userData.lastGeneratedKey, userData.keyExpiresAt, expiryHours);
+                        return;
+                    }
+                    
+                    // Varna ek 100% Nayi Fresh Random Key banao
+                    const newKey = "UKM-" + 
+                        Math.random().toString(36).substring(2,6).toUpperCase() + "-" + 
+                        Math.random().toString(36).substring(2,6).toUpperCase() + "-" + 
+                        Math.random().toString(36).substring(2,6).toUpperCase() + "-" + 
+                        Math.random().toString(36).substring(2,6).toUpperCase();
+                    
+                    // Expiry Time calculate karo (Current Time + Admin Hours)
+                    const expiresAt = now + (expiryHours * 60 * 60 * 1000);
+                    
+                    // Database mein Save karo
+                    await update(userRef, {
+                        lastGeneratedKey: newKey,
+                        keyExpiresAt: expiresAt
+                    });
+                    
+                    displayKeyInfo(newKey, expiresAt, expiryHours);
+                } else {
+                    // Agar admin ne factory reset maar diya hai, toh browser se bhi user data clear kardo
+                    localStorage.removeItem('dgxen_device_id');
+                    location.reload();
                 }
-                segments.push(s);
-            }
-
-            const finalKey = "UKM-" + segments.join("-");
-            document.getElementById('finalKey').innerText = finalKey;
-
-            // --- JAADU: Save this key to Firebase User Profile ---
-            // YAHAN HONA CHAHIYE YE CODE (Key banne ke baad!)
-            const currentDevId = localStorage.getItem('dgxen_device_id');
-            if(currentDevId) {
-                import('https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js').then(module => {
-                    module.update(module.ref(db, 'users/' + currentDevId), { lastGeneratedKey: finalKey });
-                });
-            }
-            // -----------------------------------------------------
+            }).catch(err => {
+                document.getElementById('finalKey').innerText = "DB CONNECTION ERROR";
+                console.error("Firebase module load error:", err);
+            });
 
         } catch (err) {
-            document.getElementById('finalKey').innerText = "CONNECT TO INTERNET";
+            document.getElementById('finalKey').innerText = "ERROR FETCHING KEY";
+            console.error(err);
         }
     }
 
-    // Button Listeners
+    // Naya function jo Key aur Expiry Time ko UI par mast tarike se dikhayega
+    function displayKeyInfo(key, expiresAt, hours) {
+        document.getElementById('finalKey').innerText = key;
+        
+        const expiryDate = new Date(expiresAt);
+        const timeString = expiryDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        let expiryText = document.getElementById('expiryTextInfo');
+        if(!expiryText) {
+            expiryText = document.createElement('p');
+            expiryText.id = 'expiryTextInfo';
+            expiryText.style = "color: #ffae00; font-size: 12.5px; font-weight: bold; margin-top: 15px; letter-spacing: 0.5px;";
+            
+            // Key text ke theek neeche timer add kar dega bina baaki UI ko chhede
+            const keyElement = document.getElementById('finalKey');
+            if(keyElement && keyElement.parentElement) {
+                keyElement.parentElement.appendChild(expiryText);
+            }
+        }
+        expiryText.innerHTML = `⏳ Valid for ${hours} Hours (Expires at ${timeString})`;
+    }
+
+
+    // --- TERA PURANA UI BUTTONS WALA CODE (Jisko maine nahi chheda) ---
+
     document.getElementById('copyBtn').addEventListener('click', () => {
         const keyText = document.getElementById('finalKey').innerText;
-        if(keyText.includes("SECURE") || keyText.includes("CONNECT") || keyText.includes("DENIED")) return;
+        // Check add kar diya taaki "GENERATING..." copy na ho
+        if(keyText.includes("SECURE") || keyText.includes("CONNECT") || keyText.includes("DENIED") || keyText.includes("ERROR") || keyText.includes("GENERATING")) return;
 
         navigator.clipboard.writeText(keyText).then(() => {
             const btn = document.getElementById('copyBtn');
@@ -353,26 +390,26 @@
         location.href = 'steps.html';
     });
 
-    // --- HIDDEN EASTER EGG: Hold Footer to copy Real Admin Device ID ---
+    // --- HIDDEN EASTER EGG ---
     const footerText = document.querySelector('.footer');
-    let webTimer;
-
-    footerText.addEventListener('touchstart', (e) => {
-        webTimer = setTimeout(() => {
-            const realId = localStorage.getItem('dgxen_device_id');
-            if(realId) {
-                navigator.clipboard.writeText(realId).then(() => {
-                    alert("Real Device ID Copied for Admin:\n" + realId);
-                });
-            } else {
-                alert("No Device ID found. Please register your name first.");
-            }
-            e.preventDefault();
-        }, 1200); // 1.2 seconds Hold
-    });
-
-    footerText.addEventListener('touchend', () => clearTimeout(webTimer));
-    footerText.addEventListener('touchmove', () => clearTimeout(webTimer));
+    if(footerText) {
+        let webTimer;
+        footerText.addEventListener('touchstart', (e) => {
+            webTimer = setTimeout(() => {
+                const realId = localStorage.getItem('dgxen_device_id');
+                if(realId) {
+                    navigator.clipboard.writeText(realId).then(() => {
+                        alert("Real Device ID Copied for Admin:\n" + realId);
+                    });
+                } else {
+                    alert("No Device ID found. Please register your name first.");
+                }
+                e.preventDefault();
+            }, 1200);
+        });
+        footerText.addEventListener('touchend', () => clearTimeout(webTimer));
+        footerText.addEventListener('touchmove', () => clearTimeout(webTimer));
+    }
 
     window.onload = verifyAndRun;
 </script>
