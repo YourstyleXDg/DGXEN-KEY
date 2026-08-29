@@ -279,7 +279,7 @@
         generateLockedKey();
     }
 
-            async function generateLockedKey() {
+    async function generateLockedKey() {
         try {
             document.getElementById('finalKey').innerText = "GENERATING...";
 
@@ -312,8 +312,8 @@
                         return;
                     }
                     
-                    // Varna ek 100% Nayi Fresh Random Key banao
-                    const newKey = "UKM-" + 
+                    // Varna ek 100% Nayi Fresh Random Key banao (UKM- ki jagah DGXEN- laga diya)
+                    const newKey = "DGXEN-" + 
                         Math.random().toString(36).substring(2,6).toUpperCase() + "-" + 
                         Math.random().toString(36).substring(2,6).toUpperCase() + "-" + 
                         Math.random().toString(36).substring(2,6).toUpperCase() + "-" + 
