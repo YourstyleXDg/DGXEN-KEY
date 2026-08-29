@@ -27,11 +27,16 @@
             margin-top: 50px;
         }
 
-        /* --- UI Visibility Controls --- */
-        #mainContainer { display: none; }
-        #bypassContainer { display: none; }
-        #bannedContainer { display: none; }
-        #namePrompt { display: none; }
+        /* --- UI Screen Classes (Naya Smooth Fade-In Animation) --- */
+        .screen-container { 
+            display: none; 
+            animation: fadeIn 0.5s ease forwards; 
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
         /* --- CARDS & MODALS --- */
         .error-card { 
@@ -51,7 +56,7 @@
             border: 1px solid #333; color: white; border-radius: 12px; text-align: center; 
             font-size: 16px;
         }
-        .name-input:focus { outline: none; border-color: var(--accent); }
+        .name-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 10px rgba(0, 255, 136, 0.2); }
 
         .key-icon { 
             background: #1a1a1a; width: 85px; height: 85px; border-radius: 50%; 
@@ -91,6 +96,7 @@
 
         .btn:hover { background: var(--accent); transform: scale(1.03); }
         .btn-red { background: var(--error); color: white; margin-top: 20px; }
+        .btn-red:hover { background: #ff2222; }
 
         .footer { 
             margin-top: 80px; color: #333; font-size: 10px; 
@@ -103,18 +109,18 @@
 <div class="container">
     
     <!-- NAME REGISTRATION PROMPT -->
-    <div id="namePrompt">
+    <div id="namePrompt" class="screen-container">
         <div class="name-card">
             <h2 style="color: white;">Welcome to DGXEN</h2>
             <p style="color: #888; font-size: 14px;">Please enter your name to register your device on our network.</p>
             <input type="text" id="userNameInput" class="name-input" placeholder="Enter your name..." autocomplete="off">
             <button class="btn" id="saveNameBtn">REGISTER DEVICE</button>
-            <p id="regStatus" style="color: var(--error); font-size: 12px; margin-top: 10px;"></p>
+            <p id="regStatus" style="color: var(--error); font-size: 12px; margin-top: 10px; height: 15px;"></p>
         </div>
     </div>
 
     <!-- MAIN KEY GENERATOR -->
-    <div id="mainContainer">
+    <div id="mainContainer" class="screen-container">
         <div class="key-icon">
             <img src="./assets/logo.png" alt="DGXEN">
         </div>
@@ -131,7 +137,7 @@
     </div>
 
     <!-- BANNED SCREEN -->
-    <div id="bannedContainer">
+    <div id="bannedContainer" class="screen-container">
         <div class="error-card">
             <div class="error-icon">💀</div>
             <div class="error-title">Account Banned</div>
@@ -140,7 +146,7 @@
     </div>
 
     <!-- BYPASS SCREEN -->
-    <div id="bypassContainer">
+    <div id="bypassContainer" class="screen-container">
         <div class="error-card">
             <div class="error-icon">🚫</div>
             <div class="error-title">Bypass Detected!</div>
@@ -157,14 +163,21 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    // Linked to your Firebase Realtime DB
     const firebaseConfig = {
         databaseURL: "https://login-pass-1a196-default-rtdb.firebaseio.com/"
     };
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // Generate a Random Device ID
+    // Naya Master Switching Function
+    function switchScreen(screenId) {
+        const screens = ['namePrompt', 'mainContainer', 'bannedContainer', 'bypassContainer'];
+        screens.forEach(id => {
+            document.getElementById(id).style.display = 'none'; // Sab hide karo
+        });
+        document.getElementById(screenId).style.display = 'block'; // Sirf zaroori wala dikhao
+    }
+
     function generateUUID() {
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
             var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
@@ -177,7 +190,7 @@
         const source = params.get('source');
         const referrer = (document.referrer || "").toLowerCase();
         
-        // --- 1. Local Storage Bypass Check ---
+        // --- 1. Local Storage Bypass Check (Sabse Pehle) ---
         const securePass = localStorage.getItem('dgxen_secure_pass');
 
         const isValidAccess = (
@@ -189,7 +202,7 @@
         );
 
         if (!isValidAccess) {
-            document.getElementById('bypassContainer').style.display = "block";
+            switchScreen('bypassContainer');
             return;
         }
 
@@ -206,7 +219,7 @@
         let deviceId = localStorage.getItem('dgxen_device_id');
 
         if (!deviceId) {
-            document.getElementById('namePrompt').style.display = "block";
+            switchScreen('namePrompt');
 
             document.getElementById('saveNameBtn').onclick = async () => {
                 const name = document.getElementById('userNameInput').value.trim();
@@ -215,8 +228,9 @@
                     return;
                 }
 
-                document.getElementById('regStatus').style.color = "white";
+                document.getElementById('regStatus').style.color = "var(--accent)";
                 document.getElementById('regStatus').innerText = "Registering...";
+                document.getElementById('saveNameBtn').disabled = true;
 
                 deviceId = generateUUID();
                 localStorage.setItem('dgxen_device_id', deviceId);
@@ -231,20 +245,26 @@
                     console.error("Firebase write error:", e);
                 }
 
-                document.getElementById('namePrompt').style.display = "none";
                 proceedToKey();
             };
         } else {
-            // Check Ban Status for existing user
             try {
                 const userRef = ref(db, 'users/' + deviceId);
                 const snapshot = await get(userRef);
-                if (snapshot.exists() && snapshot.val().status === 'banned') {
-                    // NEW: Custom Ban Message Fetching! 
+                
+                // --- FACTORY RESET SYNC FIX ---
+                if (!snapshot.exists()) {
+                    localStorage.removeItem('dgxen_device_id');
+                    location.reload();
+                    return;
+                }
+
+                // Ban Check
+                if (snapshot.val().status === 'banned') {
                     const reason = snapshot.val().banReason || "Your device has been permanently banned from the DGXEN network by the administrator.";
                     document.querySelector('#bannedContainer p').innerText = reason;
                     
-                    document.getElementById('bannedContainer').style.display = "block";
+                    switchScreen('bannedContainer');
                     return;
                 }
             } catch (e) {
@@ -255,7 +275,7 @@
     }
 
     function proceedToKey() {
-        document.getElementById('mainContainer').style.display = "block";
+        switchScreen('mainContainer');
         generateLockedKey();
     }
 
@@ -302,7 +322,6 @@
         }
     }
 
-    // Button Listeners
     document.getElementById('copyBtn').addEventListener('click', () => {
         const keyText = document.getElementById('finalKey').innerText;
         if(keyText.includes("SECURE") || keyText.includes("CONNECT") || keyText.includes("DENIED")) return;
@@ -322,7 +341,27 @@
         location.href = 'steps.html';
     });
 
-    // Start everything on load
+    // --- HIDDEN EASTER EGG: Hold Footer to copy Real Admin Device ID ---
+    const footerText = document.querySelector('.footer');
+    let webTimer;
+
+    footerText.addEventListener('touchstart', (e) => {
+        webTimer = setTimeout(() => {
+            const realId = localStorage.getItem('dgxen_device_id');
+            if(realId) {
+                navigator.clipboard.writeText(realId).then(() => {
+                    alert("Real Device ID Copied for Admin:\n" + realId);
+                });
+            } else {
+                alert("No Device ID found. Please register your name first.");
+            }
+            e.preventDefault();
+        }, 1200); // 1.2 seconds Hold
+    });
+
+    footerText.addEventListener('touchend', () => clearTimeout(webTimer));
+    footerText.addEventListener('touchmove', () => clearTimeout(webTimer));
+
     window.onload = verifyAndRun;
 </script>
 </body>
