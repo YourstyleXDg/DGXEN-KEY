@@ -240,6 +240,10 @@
                 const userRef = ref(db, 'users/' + deviceId);
                 const snapshot = await get(userRef);
                 if (snapshot.exists() && snapshot.val().status === 'banned') {
+                    // NEW: Custom Ban Message Fetching! 
+                    const reason = snapshot.val().banReason || "Your device has been permanently banned from the DGXEN network by the administrator.";
+                    document.querySelector('#bannedContainer p').innerText = reason;
+                    
                     document.getElementById('bannedContainer').style.display = "block";
                     return;
                 }
@@ -264,13 +268,11 @@
             
             let day;
             try {
-                // Tumhara Pastebin Link
                 const pastebinResponse = await fetch('https://pastebin.com/raw/6TzV6L3G');
                 const pastebinData = await pastebinResponse.text();
                 day = parseInt(pastebinData.trim());
                 if (isNaN(day)) throw new Error("Invalid Pastebin data");
             } catch(e) {
-                // Fallback to local date if Pastebin isn't working
                 day = Math.floor(Date.now() / 86400000);
             }
             
