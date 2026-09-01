@@ -5,61 +5,84 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Get a Free Key | DGXEN</title>
     <style>
-        :root { --bg: #000000; --card: #121212; --text: #ffffff; --accent: #ffffff; --warning-bg: #1a1505; --warning-border: #3d3002; --warning-text: #eec136; }
+        :root { 
+            --bg: #000000; 
+            --card: #121212; 
+            --text: #ffffff; 
+            --accent: #00ff88; 
+            --warning-bg: #1a1505; 
+            --warning-border: #3d3002; 
+            --warning-text: #eec136; 
+            --error: #ff5252;
+        }
+        
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
         body { 
             background-color: var(--bg); color: var(--text); 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             display: flex; justify-content: center; align-items: center; 
-            min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box;
+            min-height: 100vh; margin: 0; padding: 20px;
         }
 
-        .container { width: 100%; max-width: 400px; text-align: center; }
+        .container { width: 100%; max-width: 420px; text-align: center; }
 
         .key-icon { 
-            background: #1a1a1a; width: 80px; height: 80px; border-radius: 50%; 
+            background: #1a1a1a; width: 85px; height: 85px; border-radius: 50%; 
             display: flex; justify-content: center; align-items: center; 
             margin: 0 auto 15px; border: 1px solid #333; overflow: hidden;
-            box-shadow: 0 0 20px rgba(255,255,255,0.05);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.05);
         }
-
         .key-icon img { width: 100%; height: 100%; object-fit: cover; }
 
-        @media (min-width: 768px) {
-            .container { max-width: 480px; }
-            .key-icon { width: 110px; height: 110px; } 
-        }
-
-        h1 { font-size: 28px; font-weight: bold; margin-bottom: 10px; }
-        .subtitle { color: #888; font-size: 14px; margin-bottom: 30px; }
+        h1 { font-size: 26px; font-weight: 800; margin-bottom: 10px; letter-spacing: 0.5px; }
+        .subtitle { color: #888; font-size: 14px; margin-bottom: 25px; line-height: 1.5; }
         
         .progress-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; }
-        .step-indicator { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #888; }
-        .circle { width: 22px; height: 22px; border: 2px solid #333; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 10px; }
-        .circle.active { border-color: var(--text); color: var(--text); }
+        .step-indicator { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #888; font-weight: 600; }
+        .circle { width: 22px; height: 22px; border: 2px solid #333; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 11px; font-weight: bold; }
+        .circle.active { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px rgba(0, 255, 136, 0.2); }
         .line { flex-grow: 1; height: 2px; background: #222; margin: 0 15px; }
 
-        .card { background: var(--card); border: 1px solid #222; border-radius: 24px; padding: 30px; text-align: left; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
-        h2 { font-size: 20px; margin-bottom: 15px; }
-        .card-p { color: #888; font-size: 15px; line-height: 1.5; margin-bottom: 25px; }
+        .card { background: var(--card); border: 1px solid #222; border-radius: 24px; padding: 30px; text-align: left; box-shadow: 0 15px 40px rgba(0,0,0,0.6); }
+        h2 { font-size: 19px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .card-p { color: #888; font-size: 14px; line-height: 1.6; margin-bottom: 25px; }
 
-        .warning { background: var(--warning-bg); border: 1px solid var(--warning-border); border-radius: 12px; padding: 15px; display: flex; gap: 12px; margin-bottom: 30px; }
+        /* --- NEW INPUT BOX STYLING --- */
+        .input-group { margin-bottom: 25px; }
+        .input-group label { display: block; font-size: 12px; color: var(--accent); margin-bottom: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .input-box { position: relative; }
+        .input-box input { 
+            width: 100%; padding: 16px 18px; background: rgba(0, 0, 0, 0.4); 
+            border: 1px solid #333; color: #fff; border-radius: 14px; 
+            font-size: 15px; font-family: monospace; outline: none; transition: 0.3s; 
+        }
+        .input-box input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.15); }
+        .error-msg { color: var(--error); font-size: 12px; margin-top: 8px; font-weight: 600; display: none; }
+
+        .warning { background: var(--warning-bg); border: 1px solid var(--warning-border); border-radius: 14px; padding: 16px; display: flex; gap: 12px; margin-bottom: 25px; }
         .warning-icon { color: var(--warning-text); font-size: 18px; }
-        .warning-title { color: var(--warning-text); font-weight: bold; font-size: 14px; }
-        .warning-text { color: #8a701f; font-size: 12px; }
+        .warning-title { color: var(--warning-text); font-weight: bold; font-size: 13px; margin-bottom: 4px; }
+        .warning-text { color: #8a701f; font-size: 12px; line-height: 1.5; }
 
-        .btn { width: 100%; padding: 16px; background: #ffffff; color: #000; border: none; border-radius: 14px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s ease; }
-        .btn:hover { transform: scale(1.02); background: #00ff88; }
+        .btn { 
+            width: 100%; padding: 16px; background: #ffffff; color: #000; 
+            border: none; border-radius: 14px; font-size: 15px; font-weight: 800; 
+            cursor: pointer; transition: 0.3s ease; letter-spacing: 0.5px; display: flex; justify-content: center; align-items: center; gap: 8px;
+        }
+        .btn:hover { transform: translateY(-2px); background: var(--accent); box-shadow: 0 10px 20px rgba(0, 255, 136, 0.2); }
+        .btn:active { transform: translateY(0) scale(0.98); }
+        .btn:disabled { opacity: 0.6; pointer-events: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="key-icon">
-        <img src="./assets/logo.png" alt="DGXEN">
+        <img src="./assets/logo.png" alt="DGXEN" onerror="this.style.display='none'">
     </div>
-    <h1>Get a Free Key</h1>
-    <p class="subtitle">Complete the step below to receive your access key.</p>
+    <h1>Device Authentication</h1>
+    <p class="subtitle">Link your specific device to generate a secure access key.</p>
 
     <div class="progress-container">
         <div class="step-indicator">
@@ -67,26 +90,87 @@
             <span>Step 1 of 1</span>
         </div>
         <div class="line"></div>
-        <div class="circle" style="background: #111;"></div>
+        <div class="circle" style="background: #111; color: #555;">2</div>
     </div>
 
     <div class="card">
-        <h2>First Step</h2>
-        <p class="card-p">To continue, click the button below to complete the first step. You will be redirected and then return to this page once finished.</p>
+        <h2>Target Device</h2>
+        <p class="card-p">Paste the Device ID you copied from the DGXEN app below. Your generated key will only work on this specific device.</p>
+
+        <!-- DEVICE ID INPUT FORM -->
+        <div class="input-group">
+            <label for="deviceIdInput">Your App Device ID</label>
+            <div class="input-box">
+                <input type="text" id="deviceIdInput" placeholder="e.g. 7fdb343b..." autocomplete="off" spellcheck="false">
+            </div>
+            <div class="error-msg" id="errorMsg">Please enter a valid Device ID from the app.</div>
+        </div>
 
         <div class="warning">
             <div class="warning-icon">⚠️</div>
             <div>
                 <div class="warning-title">Security Notice</div>
-                <div class="warning-text">The use of bots or any kind of automation will result in your key being banned.</div>
+                <div class="warning-text">The use of bots or fake IDs will result in a permanent ban. This key will be hardware-locked to the ID provided.</div>
             </div>
         </div>
 
-        <button class="btn" onclick="localStorage.setItem('dgxen_secure_pass', 'true'); location.href='https://vplink.in/getkey';">
-    CONTINUE TO STEP ➜
-      </button>
+        <button class="btn" id="continueBtn" onclick="processStep()">
+            CONTINUE TO STEP ➜
+        </button>
     </div>
 </div>
+
+<script>
+    // Robust Error Handling & Processing
+    function processStep() {
+        const inputField = document.getElementById('deviceIdInput');
+        const errorMsg = document.getElementById('errorMsg');
+        const btn = document.getElementById('continueBtn');
+        
+        const deviceId = inputField.value.trim();
+
+        // Basic Validation (Check if empty or too short)
+        if (!deviceId || deviceId.length < 5) {
+            errorMsg.style.display = 'block';
+            inputField.style.borderColor = 'var(--error)';
+            
+            // Shake Animation for error feedback
+            inputField.style.transform = 'translateX(-5px)';
+            setTimeout(() => inputField.style.transform = 'translateX(5px)', 100);
+            setTimeout(() => inputField.style.transform = 'translateX(0)', 200);
+            
+            inputField.focus();
+            return;
+        }
+
+        // Success - Reset Error UI
+        errorMsg.style.display = 'none';
+        inputField.style.borderColor = '#333';
+
+        // Securely store the Target Device ID for the Generator Page
+        try {
+            localStorage.setItem('dgxen_target_device_id', deviceId);
+            localStorage.setItem('dgxen_secure_pass', 'true');
+        } catch(e) {
+            console.warn("Local storage issue, proceeding anyway.");
+        }
+
+        // Change Button State to Loading
+        btn.innerText = 'PROCESSING...';
+        btn.disabled = true;
+
+        // Redirect to Link Vertise / Shortener
+        location.href = 'https://vplink.in/getkey';
+    }
+
+    // Allow 'Enter' key to submit
+    document.getElementById('deviceIdInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            processStep();
+        }
+    });
+</script>
 
 </body>
 </html>
