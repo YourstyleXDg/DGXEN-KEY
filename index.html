@@ -81,7 +81,7 @@
         .btn:active { transform: scale(0.975); }
         .btn-success { background: linear-gradient(135deg,#60ffb5,#00cf73); box-shadow: 0 10px 30px rgba(0,255,136,.32); }
         
-        .btn-red { background: linear-gradient(135deg, #ff6b6b, #e60000); color: white; box-shadow: 0 10px 30px rgba(255, 68, 68, 0.3); border: none; inset: none;}
+        .btn-red { background: linear-gradient(135deg, #ff6b6b, #e60000); color: white; box-shadow: 0 10px 30px rgba(255, 68, 68, 0.3); border: none; }
         .btn-red:active { transform: scale(0.975); }
 
         /* Error States */
@@ -90,8 +90,8 @@
         .error-title { color: var(--error); font-size: 24px; font-weight: 800; margin-bottom: 15px; text-shadow: 0 0 20px rgba(255,82,82,.4); position: relative; z-index: 2;}
 
         /* Contact Admin Badge */
-        .contact-admin { display: inline-flex; align-items: center; justify-content: center; margin-top: 25px; padding: 10px 20px; border-radius: 999px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--muted); font-size: 12px; font-weight: 700; text-decoration: none; transition: 0.3s; position: relative; z-index: 2;}
-        .contact-admin:hover { background: rgba(255, 255, 255, 0.1); color: #fff; border-color: rgba(255, 255, 255, 0.2); }
+        .contact-admin { display: inline-flex; align-items: center; justify-content: center; margin-top: 15px; padding: 12px 24px; border-radius: 999px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--muted); font-size: 13px; font-weight: 700; text-decoration: none; transition: 0.3s; position: relative; z-index: 2;}
+        .contact-admin:hover { background: rgba(255, 255, 255, 0.1); color: #fff; border-color: rgba(255, 255, 255, 0.2); transform: scale(1.05); }
 
         .footer { margin-top: 40px; color: rgba(255,255,255,0.2); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; font-weight: 800; }
     </style>
@@ -127,13 +127,13 @@
         </div>
     </div>
 
-    <!-- BANNED SCREEN -->
+    <!-- DEVICE BANNED SCREEN (Updated Text & Logic) -->
     <div id="bannedContainer" class="screen-container">
         <div class="glass-card error-card">
             <div class="glass-glare"></div>
             <div class="error-icon">💀</div>
-            <div class="error-title">Account Banned</div>
-            <p class="card-p" id="banReasonText" style="color: #d1d1d1;">Your device has been permanently banned from the DGXEN network by the administrator.</p>
+            <div class="error-title">Device Banned</div>
+            <p class="card-p" id="banReasonText" style="color: #d1d1d1; line-height: 1.6;">Your device has been permanently blacklisted from the DGXEN network. You can no longer generate access keys.</p>
             <a href="https://t.me/DGXEN" target="_blank" class="contact-admin">Contact Support</a>
         </div>
     </div>
@@ -152,7 +152,7 @@
     <div class="footer">DGXEN SECURITY SYSTEM</div>
 </div>
 
-<!-- FIREBASE & LOGIC (Untouched System Logic) -->
+<!-- FIREBASE & LOGIC -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
@@ -245,9 +245,19 @@
                     return;
                 }
 
+                // SMART BAN FILTER LOGIC
                 if (snapshot.val().status === 'banned') {
-                    // Yahan logic theek kar diya hai, ab humesha standard ban message aayega.
-                    document.getElementById('banReasonText').innerText = "Your device has been permanently banned from the DGXEN network by the administrator.";
+                    let dbReason = snapshot.val().banReason || "";
+                    
+                    // Agar database wale reason me "generate a new key" likha hai (jo App ke liye tha), 
+                    // toh isko overwrite kar do taaki Generator page par sense bane.
+                    if (dbReason.toLowerCase().includes("generate a new key") || dbReason === "") {
+                        document.getElementById('banReasonText').innerText = "Your device has been permanently blacklisted from the DGXEN network. You can no longer generate access keys.";
+                    } else {
+                        // Agar admin ne specially koi dusra reason likha tha (jaise "Spamming link"), toh wo dikhega
+                        document.getElementById('banReasonText').innerText = "Reason: " + dbReason;
+                    }
+                    
                     switchScreen('bannedContainer');
                     return;
                 }
