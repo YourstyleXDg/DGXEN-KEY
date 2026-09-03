@@ -133,7 +133,7 @@
             <div class="glass-glare"></div>
             <div class="error-icon">💀</div>
             <div class="error-title">Account Banned</div>
-            <p class="card-p" id="banReasonText" style="color: #d1d1d1;">Your device has been permanently banned from the DGXEN network.</p>
+            <p class="card-p" id="banReasonText" style="color: #d1d1d1;">Your device has been permanently banned from the DGXEN network by the administrator.</p>
             <a href="https://t.me/DGXEN" target="_blank" class="contact-admin">Contact Support</a>
         </div>
     </div>
@@ -246,8 +246,8 @@
                 }
 
                 if (snapshot.val().status === 'banned') {
-                    const reason = snapshot.val().banReason || "Your device has been permanently banned from the DGXEN network by the administrator.";
-                    document.getElementById('banReasonText').innerText = reason;
+                    // Yahan logic theek kar diya hai, ab humesha standard ban message aayega.
+                    document.getElementById('banReasonText').innerText = "Your device has been permanently banned from the DGXEN network by the administrator.";
                     switchScreen('bannedContainer');
                     return;
                 }
