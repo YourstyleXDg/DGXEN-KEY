@@ -38,14 +38,29 @@
             to { opacity: 1; transform: none; }
         }
         .error-card {
-            background: rgba(255,60,60,0.06);
-            border: 1px solid rgba(255,70,70,0.28);
-            border-radius: 26px; padding: 36px 26px;
-            box-shadow: 0 18px 48px rgba(0,0,0,0.4);
-            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            background: #1a0a0a;
+            border: 1px solid #441111;
+            border-radius: 28px;
+            padding: 40px 30px;
+            box-shadow: 0 10px 40px rgba(255,0,0,0.1);
         }
-        .error-icon { font-size: 46px; margin-bottom: 14px; }
-        .error-title { color: var(--error); font-size: 22px; font-weight: 800; margin-bottom: 12px; }
+        .error-icon { font-size: 50px; margin-bottom: 20px; }
+        .error-title { color: var(--error); font-size: 24px; font-weight: bold; margin-bottom: 15px; }
+        .contact-admin-btn {
+            display: inline-block;
+            margin-top: 4px;
+            padding: 10px 18px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #2AABEE;
+            background: rgba(42,171,238,0.12);
+            border: 1px solid rgba(42,171,238,0.35);
+            text-decoration: none;
+            transition: background .2s, transform .15s;
+        }
+        .contact-admin-btn:active { transform: scale(0.97); }
+        .contact-admin-btn:hover { background: rgba(42,171,238,0.2); }
         .name-card, .card {
             background: var(--card);
             border: 1px solid rgba(255,255,255,0.1);
@@ -145,21 +160,20 @@
 
     <div id="bannedContainer" class="screen-container">
         <div class="error-card">
-            <div class="error-icon">🚫</div>
+            <div class="error-icon">💀</div>
             <div class="error-title">Account Banned</div>
-            <p id="bannedReason" style="color:var(--muted);font-size:14px;line-height:1.55;margin:0 0 8px;">Your device has been banned from the DGXEN network by the administrator.</p>
-            <p class="contact-line">You can contact the admin for review.</p>
-            <a class="btn btn-tg" href="https://t.me/PUBLISHER_0" target="_blank" rel="noopener">CONTACT ADMIN ON TELEGRAM</a>
+            <p id="bannedReason" style="color:#888;font-size:14px;line-height:1.55;margin:0 0 18px;">Your device has been permanently banned from the DGXEN network by the administrator.</p>
+            <a class="contact-admin-btn" href="https://t.me/PUBLISHER_0" target="_blank" rel="noopener">Contact Admin</a>
         </div>
     </div>
 
     <div id="bypassContainer" class="screen-container">
         <div class="error-card">
-            <div class="error-icon">🔒</div>
-            <div class="error-title">Direct Access Blocked</div>
-            <p style="color:var(--muted);font-size:14px;line-height:1.55;margin:0;">Please use the official steps link to generate your key.</p>
+            <div class="error-icon">🚫</div>
+            <div class="error-title">Bypass Detected!</div>
+            <p style="color:#888;font-size:14px;line-height:1.55;margin:0 0 18px;">Direct access is prohibited. Please use the official link from the script to generate your key.</p>
             <button class="btn btn-red" id="returnBtn">RETURN TO STEPS</button>
-            <p class="contact-line">Need help? <a href="https://t.me/PUBLISHER_0" target="_blank" rel="noopener">Telegram admin</a></p>
+            <a class="contact-admin-btn" href="https://t.me/PUBLISHER_0" target="_blank" rel="noopener" style="margin-top:14px;display:inline-block;">Contact Admin</a>
         </div>
     </div>
 
