@@ -2,133 +2,140 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Key Generated | DGXEN</title>
     <style>
-        :root { --bg: #000000; --card: #121212; --text: #ffffff; --accent: #00ff88; --error: #ff4444; }
-        
-        body { 
-            background-color: var(--bg); 
-            color: var(--text); 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh; 
-            margin: 0; 
-            padding: 20px;
-            box-sizing: border-box;
+        :root {
+            --bg: #050505;
+            --card: rgba(255,255,255,0.06);
+            --text: #ffffff;
+            --muted: #9a9a9a;
+            --accent: #00ff88;
+            --error: #ff4d4d;
         }
-
-        .container { 
-            width: 100%; 
-            max-width: 400px; 
-            text-align: center;
-            margin-top: 50px;
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            margin: 0; min-height: 100vh; padding: 24px 20px;
+            display: flex; justify-content: center; align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at 20% 10%, rgba(255,255,255,0.05), transparent 42%),
+                radial-gradient(circle at 85% 85%, rgba(0,255,136,0.07), transparent 45%),
+                var(--bg);
+            -webkit-font-smoothing: antialiased;
         }
-
-        /* --- UI Screen Classes (Naya Smooth Fade-In Animation) --- */
-        .screen-container { 
-            display: none; 
-            animation: fadeIn 0.5s ease forwards; 
+        .container {
+            width: 100%; max-width: 400px; text-align: center;
+            margin-top: 28px;
         }
-
+        .screen-container {
+            display: none;
+            animation: fadeIn .45s ease both;
+        }
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; transform: translateY(14px); }
+            to { opacity: 1; transform: none; }
         }
-
-        /* --- CARDS & MODALS --- */
-        .error-card { 
-            background: #1a0a0a; border: 1px solid #441111; border-radius: 28px; 
-            padding: 40px 30px; box-shadow: 0 10px 40px rgba(255,0,0,0.1);
+        .error-card {
+            background: rgba(255,60,60,0.06);
+            border: 1px solid rgba(255,70,70,0.28);
+            border-radius: 26px; padding: 36px 26px;
+            box-shadow: 0 18px 48px rgba(0,0,0,0.4);
+            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
         }
-        .error-icon { font-size: 50px; margin-bottom: 20px; }
-        .error-title { color: var(--error); font-size: 24px; font-weight: bold; margin-bottom: 15px; }
-
-        .name-card {
-            background: var(--card); border: 1px solid var(--accent); border-radius: 24px; 
-            padding: 40px 30px; text-align: center; box-shadow: 0 15px 50px rgba(0,255,136,0.1);
+        .error-icon { font-size: 46px; margin-bottom: 14px; }
+        .error-title { color: var(--error); font-size: 22px; font-weight: 800; margin-bottom: 12px; }
+        .name-card, .card {
+            background: var(--card);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 26px; padding: 36px 26px 28px;
+            box-shadow: 0 18px 48px rgba(0,0,0,0.45), inset 0 1px rgba(255,255,255,0.08);
+            backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
         }
-        
+        .name-card { border-color: rgba(0,255,136,0.35); }
         .name-input {
-            width: 90%; padding: 15px; margin: 20px 0; background: #000; 
-            border: 1px solid #333; color: white; border-radius: 12px; text-align: center; 
-            font-size: 16px;
+            width: 100%; padding: 15px; margin: 16px 0 12px;
+            background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12);
+            color: #fff; border-radius: 14px; text-align: center; font-size: 15px; font-weight: 600;
+            outline: none;
         }
-        .name-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 10px rgba(0, 255, 136, 0.2); }
-
-        .key-icon { 
-            background: #1a1a1a; width: 85px; height: 85px; border-radius: 50%; 
-            display: flex; justify-content: center; align-items: center; 
-            margin: -45px auto 15px; border: 1px solid #333; overflow: hidden; 
-            box-shadow: 0 0 25px rgba(0, 255, 136, 0.1); position: relative; z-index: 10;
+        .name-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(0,255,136,0.15);
         }
-
+        .key-icon {
+            width: 84px; height: 84px; margin: -48px auto 14px;
+            border-radius: 50%; overflow: hidden; position: relative; z-index: 2;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(0,0,0,0.5);
+            box-shadow: 0 0 28px rgba(0,255,136,0.15);
+        }
         .key-icon img { width: 100%; height: 100%; object-fit: cover; }
-
-        h1 { font-size: 28px; font-weight: bold; margin-bottom: 8px; }
-        .subtitle { color: #888; font-size: 14px; margin-bottom: 30px; }
-
-        .card { 
-            background: var(--card); border: 1px solid #222; border-radius: 28px; 
-            padding: 40px 30px 30px; text-align: center; box-shadow: 0 15px 50px rgba(0,0,0,0.6); 
+        h1 { font-size: 26px; font-weight: 800; margin: 0 0 6px; }
+        .subtitle { color: var(--muted); font-size: 14px; margin: 0 0 26px; }
+        h2 { font-size: 20px; margin: 0 0 10px; color: var(--accent); font-weight: 800; }
+        .card-p { color: var(--muted); font-size: 14px; line-height: 1.55; margin: 0 0 20px; }
+        .key-box {
+            background: rgba(0,0,0,0.45);
+            padding: 20px; border-radius: 16px;
+            border: 1px dashed rgba(0,255,136,0.55);
+            margin-bottom: 18px;
         }
-
-        h2 { font-size: 22px; margin-bottom: 12px; color: var(--accent); font-weight: 700; }
-        .card-p { color: #999; font-size: 14px; line-height: 1.6; margin-bottom: 25px; }
-
-        .key-box { 
-            background: #000; padding: 22px; border-radius: 18px; 
-            border: 1px dashed var(--accent); margin-bottom: 25px; 
+        #finalKey {
+            color: var(--accent);
+            font-family: ui-monospace, "Courier New", monospace;
+            font-size: 17px; font-weight: 800; letter-spacing: 0.8px;
+            word-break: break-all;
         }
-        
-        #finalKey { 
-            color: var(--accent); font-family: 'Courier New', monospace; 
-            font-size: 19px; font-weight: bold; letter-spacing: 1px; 
+        .btn {
+            width: 100%; padding: 16px; border: none; border-radius: 14px;
+            background: linear-gradient(135deg, #fff, #e8e8e8); color: #000;
+            font-size: 15px; font-weight: 800; cursor: pointer;
+            transition: transform .15s, background .25s, box-shadow .25s;
+            box-shadow: 0 10px 28px rgba(0,0,0,0.28);
         }
-        
-        .btn { 
-            width: 100%; padding: 18px; background: #ffffff; color: #000; 
-            border: none; border-radius: 16px; font-size: 16px; font-weight: 800; 
-            cursor: pointer; transition: 0.4s; 
+        .btn:active { transform: scale(0.98); }
+        .btn:hover { background: linear-gradient(135deg, #60ffb5, #00d17a); }
+        .btn-red {
+            background: linear-gradient(135deg, #ff6b6b, #e03535); color: #fff; margin-top: 14px;
         }
-
-        .btn:hover { background: var(--accent); transform: scale(1.03); }
-        .btn-red { background: var(--error); color: white; margin-top: 20px; }
-        .btn-red:hover { background: #ff2222; }
-
-        .footer { 
-            margin-top: 80px; color: #333; font-size: 10px; 
-            letter-spacing: 2px; text-transform: uppercase; font-weight: bold; 
+        .btn-red:hover { filter: brightness(1.05); }
+        .btn-tg {
+            background: linear-gradient(135deg, #2AABEE, #229ED9); color: #fff; margin-top: 12px;
         }
+        .footer {
+            margin-top: 56px; color: rgba(255,255,255,0.18);
+            font-size: 10px; letter-spacing: 2px; text-transform: uppercase; font-weight: 800;
+        }
+        .contact-line {
+            margin-top: 14px; font-size: 13px; color: var(--muted); line-height: 1.5;
+        }
+        .contact-line a { color: var(--accent); font-weight: 700; text-decoration: none; }
     </style>
 </head>
 <body>
-
 <div class="container">
-    
-    <!-- NAME REGISTRATION PROMPT -->
+
     <div id="namePrompt" class="screen-container">
         <div class="name-card">
-            <h2 style="color: white;">Welcome to DGXEN</h2>
-            <p style="color: #888; font-size: 14px;">Please enter your name to register your device on our network.</p>
-            <input type="text" id="userNameInput" class="name-input" placeholder="Enter your name..." autocomplete="off">
+            <h2 style="color:#fff;">Welcome to DGXEN</h2>
+            <p style="color:var(--muted);font-size:14px;margin:0;">Enter your name to register this device on the network.</p>
+            <input type="text" id="userNameInput" class="name-input" placeholder="Your name..." autocomplete="off">
             <button class="btn" id="saveNameBtn">REGISTER DEVICE</button>
-            <p id="regStatus" style="color: var(--error); font-size: 12px; margin-top: 10px; height: 15px;"></p>
+            <p id="regStatus" style="color:var(--error);font-size:12px;margin-top:10px;min-height:16px;"></p>
         </div>
     </div>
 
-    <!-- MAIN KEY GENERATOR -->
     <div id="mainContainer" class="screen-container">
         <div class="key-icon">
-            <img src="./assets/logo.png" alt="DGXEN">
+            <img src="./assets/logo.png" alt="DGXEN" onerror="this.style.display='none'">
         </div>
         <h1>Access Unlocked</h1>
         <p class="subtitle">Your device-locked license key is ready.</p>
         <div class="card">
-            <h2>Generation Success!</h2>
-            <p class="card-p">This key is locked to your device. Share it, and it won't work for others.</p>
+            <h2>Generation Success</h2>
+            <p class="card-p">This key is locked to your device. Sharing it will not work on other devices.</p>
             <div class="key-box">
                 <span id="finalKey">SECURE FETCHING...</span>
             </div>
@@ -136,32 +143,32 @@
         </div>
     </div>
 
-    <!-- BANNED SCREEN -->
     <div id="bannedContainer" class="screen-container">
         <div class="error-card">
-            <div class="error-icon">💀</div>
+            <div class="error-icon">🚫</div>
             <div class="error-title">Account Banned</div>
-            <p style="color:#888; font-size: 14px; line-height: 1.5;">Your device has been permanently banned from the DGXEN network by the administrator.</p>
+            <p id="bannedReason" style="color:var(--muted);font-size:14px;line-height:1.55;margin:0 0 8px;">Your device has been banned from the DGXEN network by the administrator.</p>
+            <p class="contact-line">You can contact the admin for review.</p>
+            <a class="btn btn-tg" href="https://t.me/PUBLISHER_0" target="_blank" rel="noopener">CONTACT ADMIN ON TELEGRAM</a>
         </div>
     </div>
 
-    <!-- BYPASS SCREEN -->
     <div id="bypassContainer" class="screen-container">
         <div class="error-card">
-            <div class="error-icon">🚫</div>
-            <div class="error-title">Bypass Detected!</div>
-            <p style="color:#888; font-size: 14px; line-height: 1.5;">Direct access is prohibited. Please use the official link from the script to generate your key.</p>
+            <div class="error-icon">🔒</div>
+            <div class="error-title">Direct Access Blocked</div>
+            <p style="color:var(--muted);font-size:14px;line-height:1.55;margin:0;">Please use the official steps link to generate your key.</p>
             <button class="btn btn-red" id="returnBtn">RETURN TO STEPS</button>
+            <p class="contact-line">Need help? <a href="https://t.me/PUBLISHER_0" target="_blank" rel="noopener">Telegram admin</a></p>
         </div>
     </div>
 
     <div class="footer">DGXEN SECURITY SYSTEM</div>
 </div>
 
-<!-- FIREBASE & LOGIC -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, get, set, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const firebaseConfig = {
         databaseURL: "https://login-pass-1a196-default-rtdb.firebaseio.com/"
@@ -169,18 +176,18 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // Naya Master Switching Function
     function switchScreen(screenId) {
-        const screens = ['namePrompt', 'mainContainer', 'bannedContainer', 'bypassContainer'];
-        screens.forEach(id => {
-            document.getElementById(id).style.display = 'none'; // Sab hide karo
+        ['namePrompt', 'mainContainer', 'bannedContainer', 'bypassContainer'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
         });
-        document.getElementById(screenId).style.display = 'block'; // Sirf zaroori wala dikhao
+        const show = document.getElementById(screenId);
+        if (show) show.style.display = 'block';
     }
 
     function generateUUID() {
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
             return v.toString(16);
         });
     }
@@ -189,12 +196,10 @@
         const params = new URLSearchParams(window.location.search);
         const source = params.get('source');
         const referrer = (document.referrer || "").toLowerCase();
-        
-        // --- 1. Local Storage Bypass Check (Sabse Pehle) ---
         const securePass = localStorage.getItem('dgxen_secure_pass');
 
         const isValidAccess = (
-            securePass === 'true' || 
+            securePass === 'true' ||
             source === "official" ||
             referrer.includes("earnlinks") ||
             referrer.includes("vplink") ||
@@ -206,30 +211,25 @@
             return;
         }
 
-        // Remove the pass immediately so they can't reuse it by refreshing
         localStorage.removeItem('dgxen_secure_pass');
-
-        // Clean the URL bar silently
         if (window.history.replaceState) {
             const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
             window.history.replaceState({}, document.title, cleanUrl);
         }
 
-        // --- 2. User Registration Check ---
         let deviceId = localStorage.getItem('dgxen_device_id');
 
         if (!deviceId) {
             switchScreen('namePrompt');
-
             document.getElementById('saveNameBtn').onclick = async () => {
                 const name = document.getElementById('userNameInput').value.trim();
                 if (name.length < 2) {
                     document.getElementById('regStatus').innerText = "Enter a valid name (min 2 letters)";
                     return;
                 }
-
-                document.getElementById('regStatus').style.color = "var(--accent)";
-                document.getElementById('regStatus').innerText = "Registering...";
+                const st = document.getElementById('regStatus');
+                st.style.color = "var(--accent)";
+                st.innerText = "Registering...";
                 document.getElementById('saveNameBtn').disabled = true;
 
                 deviceId = generateUUID();
@@ -244,26 +244,23 @@
                 } catch (e) {
                     console.error("Firebase write error:", e);
                 }
-
                 proceedToKey();
             };
         } else {
             try {
                 const userRef = ref(db, 'users/' + deviceId);
                 const snapshot = await get(userRef);
-                
-                // --- FACTORY RESET SYNC FIX ---
+
                 if (!snapshot.exists()) {
                     localStorage.removeItem('dgxen_device_id');
                     location.reload();
                     return;
                 }
 
-                // Ban Check
                 if (snapshot.val().status === 'banned') {
                     const reason = snapshot.val().banReason || "Your device has been permanently banned from the DGXEN network by the administrator.";
-                    document.querySelector('#bannedContainer p').innerText = reason;
-                    
+                    const p = document.getElementById('bannedReason');
+                    if (p) p.innerText = reason;
                     switchScreen('bannedContainer');
                     return;
                 }
@@ -282,106 +279,73 @@
     async function generateLockedKey() {
         try {
             document.getElementById('finalKey').innerText = "GENERATING...";
-
             const deviceId = localStorage.getItem('dgxen_device_id');
-            if(!deviceId) {
-                // Agar ID nahi hai, toh page reload karke register karne bolega
-                location.reload(); 
+            if (!deviceId) {
+                location.reload();
                 return;
             }
 
-            // Firebase se data fetch karke Key aur Expiry set karna
-            import('https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js').then(async (module) => {
-                const { ref, get, update } = module;
+            const settingsSnap = await get(ref(db, 'settings/keyExpiryHours'));
+            const expiryHours = settingsSnap.exists() ? settingsSnap.val() : 24;
+            const userRef = ref(db, 'users/' + deviceId);
+            const userSnap = await get(userRef);
 
-                // 1. Admin Panel se set kiya hua Expiry Time check karo (Agar error ho toh default 24 ghante)
-                const settingsSnap = await get(ref(db, 'settings/keyExpiryHours'));
-                const expiryHours = settingsSnap.exists() ? settingsSnap.val() : 24;
+            if (userSnap.exists()) {
+                const userData = userSnap.val();
+                const now = Date.now();
 
-                // 2. User ka profile data check karo
-                const userRef = ref(db, 'users/' + deviceId);
-                const userSnap = await get(userRef);
-                
-                if (userSnap.exists()) {
-                    const userData = userSnap.val();
-                    const now = Date.now();
-
-                    // Agar user ke paas pehle se key hai aur wo expire NAHI hui hai, toh purani wali hi dikhao
-                    if (userData.lastGeneratedKey && userData.keyExpiresAt && now < userData.keyExpiresAt) {
-                        displayKeyInfo(userData.lastGeneratedKey, userData.keyExpiresAt, expiryHours);
-                        return;
-                    }
-                    
-                    // Varna ek 100% Nayi Fresh Random Key banao (UKM- ki jagah DGXEN- laga diya)
-                    const newKey = "DGXEN-" + 
-                        Math.random().toString(36).substring(2,6).toUpperCase() + "-" + 
-                        Math.random().toString(36).substring(2,6).toUpperCase() + "-" + 
-                        Math.random().toString(36).substring(2,6).toUpperCase() + "-" + 
-                        Math.random().toString(36).substring(2,6).toUpperCase();
-                    
-                    // Expiry Time calculate karo (Current Time + Admin Hours)
-                    const expiresAt = now + (expiryHours * 60 * 60 * 1000);
-                    
-                    // Database mein Save karo
-                    await update(userRef, {
-                        lastGeneratedKey: newKey,
-                        keyExpiresAt: expiresAt
-                    });
-                    
-                    displayKeyInfo(newKey, expiresAt, expiryHours);
-                } else {
-                    // Agar admin ne factory reset maar diya hai, toh browser se bhi user data clear kardo
-                    localStorage.removeItem('dgxen_device_id');
-                    location.reload();
+                if (userData.lastGeneratedKey && userData.keyExpiresAt && now < userData.keyExpiresAt) {
+                    displayKeyInfo(userData.lastGeneratedKey, userData.keyExpiresAt, expiryHours);
+                    return;
                 }
-            }).catch(err => {
-                document.getElementById('finalKey').innerText = "DB CONNECTION ERROR";
-                console.error("Firebase module load error:", err);
-            });
 
+                const newKey = "DGXEN-" +
+                    Math.random().toString(36).substring(2, 6).toUpperCase() + "-" +
+                    Math.random().toString(36).substring(2, 6).toUpperCase() + "-" +
+                    Math.random().toString(36).substring(2, 6).toUpperCase() + "-" +
+                    Math.random().toString(36).substring(2, 6).toUpperCase();
+
+                const expiresAt = now + (expiryHours * 60 * 60 * 1000);
+                await update(userRef, {
+                    lastGeneratedKey: newKey,
+                    keyExpiresAt: expiresAt
+                });
+                displayKeyInfo(newKey, expiresAt, expiryHours);
+            } else {
+                localStorage.removeItem('dgxen_device_id');
+                location.reload();
+            }
         } catch (err) {
             document.getElementById('finalKey').innerText = "ERROR FETCHING KEY";
             console.error(err);
         }
     }
 
-    // Naya function jo Key aur Expiry Time ko UI par mast tarike se dikhayega
     function displayKeyInfo(key, expiresAt, hours) {
         document.getElementById('finalKey').innerText = key;
-        
         const expiryDate = new Date(expiresAt);
-        const timeString = expiryDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        
+        const timeString = expiryDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         let expiryText = document.getElementById('expiryTextInfo');
-        if(!expiryText) {
+        if (!expiryText) {
             expiryText = document.createElement('p');
             expiryText.id = 'expiryTextInfo';
-            expiryText.style = "color: #ffae00; font-size: 12.5px; font-weight: bold; margin-top: 15px; letter-spacing: 0.5px;";
-            
-            // Key text ke theek neeche timer add kar dega bina baaki UI ko chhede
+            expiryText.style.cssText = "color:#ffae00;font-size:12.5px;font-weight:700;margin-top:12px;letter-spacing:0.3px;";
             const keyElement = document.getElementById('finalKey');
-            if(keyElement && keyElement.parentElement) {
-                keyElement.parentElement.appendChild(expiryText);
-            }
+            if (keyElement && keyElement.parentElement) keyElement.parentElement.appendChild(expiryText);
         }
         expiryText.innerHTML = `⏳ Valid for ${hours} Hours (Expires at ${timeString})`;
     }
 
-
-    // --- TERA PURANA UI BUTTONS WALA CODE (Jisko maine nahi chheda) ---
-
     document.getElementById('copyBtn').addEventListener('click', () => {
         const keyText = document.getElementById('finalKey').innerText;
-        // Check add kar diya taaki "GENERATING..." copy na ho
-        if(keyText.includes("SECURE") || keyText.includes("CONNECT") || keyText.includes("DENIED") || keyText.includes("ERROR") || keyText.includes("GENERATING")) return;
-
+        if (/SECURE|CONNECT|DENIED|ERROR|GENERATING/i.test(keyText)) return;
         navigator.clipboard.writeText(keyText).then(() => {
             const btn = document.getElementById('copyBtn');
-            btn.innerText = "COPIED SUCCESSFULLY! ✅";
-            btn.style.background = "#00ff88";
-            setTimeout(() => { 
-                btn.innerText = "COPY TO CLIPBOARD"; 
-                btn.style.background = "#ffffff";
+            btn.innerText = "COPIED ✓";
+            btn.style.background = "linear-gradient(135deg,#60ffb5,#00d17a)";
+            setTimeout(() => {
+                btn.innerText = "COPY TO CLIPBOARD";
+                btn.style.background = "";
             }, 2000);
         });
     });
@@ -390,14 +354,13 @@
         location.href = 'steps.html';
     });
 
-    // --- HIDDEN EASTER EGG ---
     const footerText = document.querySelector('.footer');
-    if(footerText) {
+    if (footerText) {
         let webTimer;
         footerText.addEventListener('touchstart', (e) => {
             webTimer = setTimeout(() => {
                 const realId = localStorage.getItem('dgxen_device_id');
-                if(realId) {
+                if (realId) {
                     navigator.clipboard.writeText(realId).then(() => {
                         alert("Real Device ID Copied for Admin:\n" + realId);
                     });
