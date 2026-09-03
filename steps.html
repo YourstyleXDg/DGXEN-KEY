@@ -2,75 +2,130 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#030504">
     <title>Get a Free Key | DGXEN</title>
     <style>
-        :root { --bg: #000000; --card: #121212; --text: #ffffff; --accent: #ffffff; --warning-bg: #1a1505; --warning-border: #3d3002; --warning-text: #eec136; }
+        :root {
+            --bg: #030504;
+            --card-radius: 34px;
+            --text: #fff;
+            --muted: #9ca5a0;
+            --accent: #00ff88;
+            --warning-bg: rgba(255, 170, 0, 0.1);
+            --warning-border: rgba(255, 170, 0, 0.3);
+            --warning-text: #ffaa00;
+        }
+        
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
         body { 
-            background-color: var(--bg); color: var(--text); 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            display: flex; justify-content: center; align-items: center; 
-            min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box;
+            background: radial-gradient(circle at 14% 13%, rgba(255,255,255,.075), transparent 26%),
+                        radial-gradient(circle at 88% 82%, rgba(0,255,136,.10), transparent 32%),
+                        linear-gradient(145deg, #020302 0%, #070a08 48%, #020403 100%);
+            color: var(--text); 
+            font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100svh; 
+            margin: 0; 
+            padding: 20px;
+            -webkit-font-smoothing: antialiased;
         }
 
-        .container { width: 100%; max-width: 400px; text-align: center; }
+        body::before {
+            content: ""; position: fixed; inset: 0; pointer-events: none; opacity: .16;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+            mix-blend-mode: soft-light; z-index: -1;
+        }
+
+        .container { 
+            width: 100%; max-width: 420px; text-align: center; 
+            animation: slideUpFade 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        @keyframes slideUpFade { 
+            from { opacity: 0; transform: translateY(30px) scale(0.98); } 
+            to { opacity: 1; transform: translateY(0) scale(1); } 
+        }
 
         .key-icon { 
-            background: #1a1a1a; width: 80px; height: 80px; border-radius: 50%; 
-            display: flex; justify-content: center; align-items: center; 
-            margin: 0 auto 15px; border: 1px solid #333; overflow: hidden;
-            box-shadow: 0 0 20px rgba(255,255,255,0.05);
+            width: 75px; height: 75px; border-radius: 50%; display: flex; 
+            justify-content: center; align-items: center; margin: 0 auto 20px; 
+            border: 1px solid rgba(255,255,255,.16); 
+            box-shadow: 0 12px 35px rgba(0,0,0,.35), 0 0 24px rgba(0,255,136,.12); 
+            position: relative; z-index: 10; background: #000; overflow: hidden; 
         }
-
         .key-icon img { width: 100%; height: 100%; object-fit: cover; }
 
-        @media (min-width: 768px) {
-            .container { max-width: 480px; }
-            .key-icon { width: 110px; height: 110px; } 
+        h1 { font-size: 26px; font-weight: 800; margin-bottom: 8px; letter-spacing: 0.5px; }
+        .subtitle { color: var(--muted); font-size: 13.5px; margin-bottom: 30px; }
+
+        /* Premium Glass Card */
+        .glass-card {
+            background: linear-gradient(145deg, rgba(255,255,255,.105), rgba(255,255,255,.034) 52%, rgba(255,255,255,.018));
+            border: 1px solid rgba(255,255,255,.13);
+            border-radius: var(--card-radius);
+            padding: 40px 30px;
+            box-shadow: 0 38px 100px rgba(0,0,0,.72), 0 0 70px rgba(255,255,255,.045), inset 0 1.5px rgba(255,255,255,.28), inset 0 -1px rgba(0,0,0,.45);
+            backdrop-filter: blur(30px) saturate(175%) contrast(108%);
+            -webkit-backdrop-filter: blur(30px) saturate(175%) contrast(108%);
+            position: relative; overflow: hidden; text-align: left;
         }
 
-        h1 { font-size: 28px; font-weight: bold; margin-bottom: 10px; }
-        .subtitle { color: #888; font-size: 14px; margin-bottom: 30px; }
+        .glass-card::before { 
+            content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1.4px; 
+            background: linear-gradient(135deg, rgba(255,105,105,.72), rgba(255,255,255,.78) 17%, transparent 42%, rgba(90,160,255,.55) 75%, rgba(255,255,255,.85)); 
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); 
+            -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; z-index: 6; 
+        }
         
-        .progress-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; }
-        .step-indicator { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #888; }
-        .circle { width: 22px; height: 22px; border: 2px solid #333; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 10px; }
-        .circle.active { border-color: var(--text); color: var(--text); }
-        .line { flex-grow: 1; height: 2px; background: #222; margin: 0 15px; }
-
-        .card { background: var(--card); border: 1px solid #222; border-radius: 24px; padding: 30px; text-align: left; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
-        h2 { font-size: 20px; margin-bottom: 15px; }
-        .card-p { color: #888; font-size: 15px; line-height: 1.5; margin-bottom: 25px; }
-
-        .warning { background: var(--warning-bg); border: 1px solid var(--warning-border); border-radius: 12px; padding: 15px; display: flex; gap: 12px; margin-bottom: 30px; }
-        .warning-icon { color: var(--warning-text); font-size: 18px; }
-        .warning-title { color: var(--warning-text); font-weight: bold; font-size: 14px; }
-        .warning-text { color: #8a701f; font-size: 12px; }
-
-        .btn { width: 100%; padding: 16px; background: #ffffff; color: #000; border: none; border-radius: 14px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s ease; }
-        .btn:hover { transform: scale(1.02); background: #00ff88; }
-
-        .contact-admin {
-            display: inline-block;
-            margin-top: 16px;
-            padding: 8px 14px;
-            font-size: 12px;
-            font-weight: 700;
-            color: #2AABEE;
-            text-decoration: none;
-            border: 1px solid rgba(42,171,238,0.4);
-            border-radius: 999px;
-            background: rgba(42,171,238,0.08);
-            white-space: nowrap;
+        /* Internal Glare */
+        .glass-glare { 
+            position: absolute; top: -100%; left: -100%; width: 300%; height: 300%; 
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.04) 45%, rgba(255, 255, 255, 0.25) 50%, rgba(255, 255, 255, 0.04) 55%, rgba(255, 255, 255, 0) 100%); 
+            transform: rotate(35deg) translateY(-50%); pointer-events: none; z-index: 1; 
+            animation: glareSweep 5.5s cubic-bezier(0.35, 0, 0.25, 1) infinite alternate; 
         }
+        @keyframes glareSweep { 0% { transform: rotate(35deg) translateY(-50%); } 100% { transform: rotate(35deg) translateY(50%); } }
+
+        /* Step Indicator */
+        .progress-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; position: relative; z-index: 2; }
+        .step-indicator { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); font-weight: 700; letter-spacing: 0.5px; }
+        .circle { width: 24px; height: 24px; border: 2px solid rgba(255,255,255,0.1); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 11px; font-weight: bold; background: rgba(0,0,0,0.4); }
+        .circle.active { border-color: var(--accent); color: var(--bg); background: var(--accent); box-shadow: 0 0 15px rgba(0,255,136,0.3); }
+        .line { flex-grow: 1; height: 2px; background: rgba(255,255,255,0.08); margin: 0 15px; border-radius: 2px; }
+
+        h2 { font-size: 22px; margin-bottom: 12px; color: #fff; font-weight: 800; letter-spacing: .3px; position: relative; z-index: 2; display: flex; align-items: center; gap: 8px;}
+        .card-p { color: var(--muted); font-size: 14.5px; line-height: 1.6; margin-bottom: 25px; position: relative; z-index: 2;}
+
+        .warning { 
+            background: var(--warning-bg); border: 1px solid var(--warning-border); 
+            border-radius: 16px; padding: 16px; display: flex; gap: 14px; margin-bottom: 25px; 
+            position: relative; z-index: 2; backdrop-filter: blur(10px);
+        }
+        .warning-icon { color: var(--warning-text); font-size: 20px; }
+        .warning-title { color: var(--warning-text); font-weight: 800; font-size: 14px; margin-bottom: 4px; letter-spacing: 0.3px;}
+        .warning-text { color: rgba(255,255,255,0.7); font-size: 12.5px; line-height: 1.5; }
+
+        .btn { 
+            width: 100%; padding: 18px; border: 0; border-radius: 16px; 
+            background: linear-gradient(135deg,#fff,#dfe5e1); color: #020302; 
+            font-size: 15px; font-weight: 900; letter-spacing: .35px; cursor: pointer; 
+            box-shadow: 0 10px 28px rgba(0,0,0,.38), inset 0 1px #fff; 
+            transition: transform .15s, box-shadow .25s, background .25s; 
+            position: relative; z-index: 2; display: flex; justify-content: center; align-items: center; gap: 8px;
+        }
+        .btn:hover { background: var(--accent); box-shadow: 0 10px 30px rgba(0,255,136,.32); transform: translateY(-2px); }
+        .btn:active { transform: translateY(0) scale(0.975); }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="key-icon">
-        <img src="./assets/logo.png" alt="DGXEN">
+        <img src="./assets/logo.png" alt="DGXEN" onerror="this.style.display='none'">
     </div>
     <h1>Get a Free Key</h1>
     <p class="subtitle">Complete the step below to receive your access key.</p>
@@ -78,31 +133,30 @@
     <div class="progress-container">
         <div class="step-indicator">
             <div class="circle active">1</div>
-            <span>Step 1 of 1</span>
+            <span style="color: #fff;">Step 1 of 1</span>
         </div>
         <div class="line"></div>
-        <div class="circle" style="background: #111;"></div>
+        <div class="circle" style="color: rgba(255,255,255,0.3);">✓</div>
     </div>
 
-    <div class="card">
-        <h2>First Step</h2>
-        <p class="card-p">To continue, click the button below to complete the first step. You will be redirected and then return to this page once finished.</p>
+    <div class="glass-card">
+        <div class="glass-glare"></div>
+        
+        <h2>Unlock Access</h2>
+        <p class="card-p">To continue, click the button below to complete the first step. You will be automatically redirected to your key once finished.</p>
 
         <div class="warning">
             <div class="warning-icon">⚠️</div>
             <div>
                 <div class="warning-title">Security Notice</div>
-                <div class="warning-text">The use of bots or any kind of automation will result in your key being banned.</div>
+                <div class="warning-text">The use of bots or any kind of link automation will result in a permanent ban.</div>
             </div>
         </div>
 
+        <!-- Yaha wahi same purana logic hai -->
         <button class="btn" onclick="localStorage.setItem('dgxen_secure_pass', 'true'); location.href='https://vplink.in/getkey';">
-    CONTINUE TO STEP ➜
-      </button>
-
-        <div style="text-align:center;">
-            <a class="contact-admin" href="https://t.me/PUBLISHER_0" target="_blank" rel="noopener noreferrer">Contact Admin</a>
-        </div>
+            CONTINUE TO STEP ➜
+        </button>
     </div>
 </div>
 
