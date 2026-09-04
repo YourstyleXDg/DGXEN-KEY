@@ -272,7 +272,7 @@
             if(!deviceId) { location.reload(); return; }
 
             import('https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js').then(async (module) => {
-                const { ref, get, update } = module;
+                const { ref, get, update, set } = module;
 
                 const settingsSnap = await get(ref(db, 'settings/keyExpiryHours'));
                 const expiryHours = settingsSnap.exists() ? settingsSnap.val() : 24;
@@ -287,6 +287,16 @@
                     if (userData.lastGeneratedKey && userData.keyExpiresAt && now < userData.keyExpiresAt) {
                         displayKeyInfo(userData.lastGeneratedKey, userData.keyExpiresAt, expiryHours);
                         return;
+                    }
+
+                    // Auto-Cleanup: clear old key device-track before saving a new key
+                    if (userData.lastGeneratedKey) {
+                        try {
+                            const oldSafeKey = btoa(unescape(encodeURIComponent(userData.lastGeneratedKey))).replace(/[.#$\[\]\/]/g, '_');
+                            await set(ref(db, 'settings/keyDeviceTrack/' + oldSafeKey), null);
+                        } catch (cleanErr) {
+                            console.warn('keyDeviceTrack cleanup failed', cleanErr);
+                        }
                     }
                     
                     const newKey = "DGXEN-" + 
