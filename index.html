@@ -2,121 +2,145 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#030504">
     <title>Key Generated | DGXEN</title>
     <style>
-        :root { --bg: #000000; --card: #121212; --text: #ffffff; --accent: #00ff88; --error: #ff4444; }
+        :root {
+            --bg: #030504;
+            --card-radius: 34px;
+            --text: #ffffff;
+            --muted: #9ca5a0;
+            --accent: #00ff88;
+            --accent-soft: rgba(0, 255, 136, 0.18);
+            --error: #ff5252;
+        }
+        
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
         body { 
-            background-color: var(--bg); 
+            background: radial-gradient(circle at 14% 13%, rgba(255,255,255,.075), transparent 26%),
+                        radial-gradient(circle at 88% 82%, rgba(0,255,136,.10), transparent 32%),
+                        linear-gradient(145deg, #020302 0%, #070a08 48%, #020403 100%);
             color: var(--text); 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             display: flex; 
             justify-content: center; 
             align-items: center; 
-            min-height: 100vh; 
+            min-height: 100svh; 
             margin: 0; 
             padding: 20px;
-            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
         }
 
-        .container { 
-            width: 100%; 
-            max-width: 400px; 
-            text-align: center;
-            margin-top: 50px;
+        body::before {
+            content: ""; position: fixed; inset: 0; pointer-events: none; opacity: .16;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+            mix-blend-mode: soft-light; z-index: -1;
         }
 
-        .screen-container { 
-            display: none; 
-            animation: fadeIn 0.5s ease forwards; 
+        .container { width: 100%; max-width: 400px; text-align: center; perspective: 1000px; }
+
+        .screen-container { display: none; animation: slideUpFade 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+        @keyframes slideUpFade { from { opacity: 0; transform: translateY(30px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+        .glass-card {
+            background: linear-gradient(145deg, rgba(255,255,255,.105), rgba(255,255,255,.034) 52%, rgba(255,255,255,.018));
+            border: 1px solid rgba(255,255,255,.13);
+            border-radius: var(--card-radius);
+            padding: 40px 28px;
+            box-shadow: 0 38px 100px rgba(0,0,0,.72), 0 0 70px rgba(255,255,255,.045), inset 0 1.5px rgba(255,255,255,.28), inset 0 -1px rgba(0,0,0,.45);
+            backdrop-filter: blur(30px) saturate(175%) contrast(108%);
+            -webkit-backdrop-filter: blur(30px) saturate(175%) contrast(108%);
+            position: relative; overflow: hidden; text-align: center;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .error-card { 
-            background: #1a0a0a; border: 1px solid #441111; border-radius: 28px; 
-            padding: 40px 30px; box-shadow: 0 10px 40px rgba(255,0,0,0.1);
-        }
-        .error-icon { font-size: 50px; margin-bottom: 20px; }
-        .error-title { color: var(--error); font-size: 24px; font-weight: bold; margin-bottom: 15px; }
-
-        .name-card {
-            background: var(--card); border: 1px solid var(--accent); border-radius: 24px; 
-            padding: 40px 30px; text-align: center; box-shadow: 0 15px 50px rgba(0,255,136,0.1);
-        }
+        .glass-card::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1.4px; background: linear-gradient(135deg, rgba(255,105,105,.72), rgba(255,255,255,.78) 17%, transparent 42%, rgba(90,160,255,.55) 75%, rgba(255,255,255,.85)); -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; z-index: 6; }
         
-        .name-input {
-            width: 90%; padding: 15px; margin: 20px 0; background: #000; 
-            border: 1px solid #333; color: white; border-radius: 12px; text-align: center; 
-            font-size: 16px;
-        }
-        .name-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 10px rgba(0, 255, 136, 0.2); }
+        .glass-glare { position: absolute; top: -100%; left: -100%; width: 300%; height: 300%; background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.04) 45%, rgba(255, 255, 255, 0.25) 50%, rgba(255, 255, 255, 0.04) 55%, rgba(255, 255, 255, 0) 100%); transform: rotate(35deg) translateY(-50%); pointer-events: none; z-index: 1; animation: glareSweep 5.5s cubic-bezier(0.35, 0, 0.25, 1) infinite alternate; }
+        @keyframes glareSweep { 0% { transform: rotate(35deg) translateY(-50%); } 100% { transform: rotate(35deg) translateY(50%); } }
 
-        .key-icon { 
-            background: #1a1a1a; width: 85px; height: 85px; border-radius: 50%; 
-            display: flex; justify-content: center; align-items: center; 
-            margin: -45px auto 15px; border: 1px solid #333; overflow: hidden; 
-            box-shadow: 0 0 25px rgba(0, 255, 136, 0.1); position: relative; z-index: 10;
-        }
-
+        .key-icon { width: 80px; height: 80px; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 24px; border: 1px solid rgba(255,255,255,.16); box-shadow: 0 12px 35px rgba(0,0,0,.35), 0 0 24px rgba(0,255,136,.12); position: relative; z-index: 10; background: #000; overflow: hidden; }
         .key-icon img { width: 100%; height: 100%; object-fit: cover; }
 
-        h1 { font-size: 28px; font-weight: bold; margin-bottom: 8px; }
-        .subtitle { color: #888; font-size: 14px; margin-bottom: 30px; }
-
-        .card { 
-            background: var(--card); border: 1px solid #222; border-radius: 28px; 
-            padding: 40px 30px 30px; text-align: center; box-shadow: 0 15px 50px rgba(0,0,0,0.6); 
+        h2 { 
+            font-size: 24px; 
+            margin: 0 0 10px; 
+            color: var(--accent); 
+            font-weight: 800; 
+            letter-spacing: .3px; 
+            text-shadow: 0 0 22px rgba(0,255,136,.35); 
+            position: relative; 
+            z-index: 2;
         }
 
-        h2 { font-size: 22px; margin-bottom: 12px; color: var(--accent); font-weight: 700; }
-        .card-p { color: #999; font-size: 14px; line-height: 1.6; margin-bottom: 25px; }
-
-        .key-box { 
-            background: #000; padding: 22px; border-radius: 18px; 
-            border: 1px dashed var(--accent); margin-bottom: 25px; 
+        .card-p { 
+            color: var(--muted); 
+            font-size: 14px; 
+            line-height: 1.5; 
+            margin: 0 0 24px; 
+            position: relative; 
+            z-index: 2;
         }
-        
+
+        .name-input, .key-box { 
+            width: 100%; 
+            padding: 20px 14px; 
+            background: rgba(0,0,0,.45); 
+            border: 1px solid rgba(255,255,255,.13); 
+            color: #fff; 
+            border-radius: 20px; 
+            text-align: center; 
+            font-size: 16px; 
+            outline: none; 
+            box-shadow: inset 0 2px 8px rgba(0,0,0,.35); 
+            margin-bottom: 24px; 
+            position: relative; 
+            z-index: 2;
+        }
+        .name-input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft), inset 0 2px 8px rgba(0,0,0,.3); }
+
         #finalKey { 
-            color: var(--accent); font-family: 'Courier New', monospace; 
-            font-size: 19px; font-weight: bold; letter-spacing: 1px; 
+            color: var(--accent); 
+            font-family: monospace; 
+            font-size: 18px; 
+            font-weight: 800; 
+            letter-spacing: 1.5px; 
+            text-shadow: 0 0 12px rgba(0,255,136,.4); 
+            display: block;
+            word-break: break-all;
         }
-        
+
         .btn { 
-            width: 100%; padding: 18px; background: #ffffff; color: #000; 
-            border: none; border-radius: 16px; font-size: 16px; font-weight: 800; 
-            cursor: pointer; transition: 0.4s; 
+            width: 100%; 
+            padding: 18px; 
+            border: 0; 
+            border-radius: 18px; 
+            background: linear-gradient(135deg,#fff,#dfe5e1); 
+            color: #020302; 
+            font-size: 15px; 
+            font-weight: 900; 
+            letter-spacing: .4px; 
+            cursor: pointer; 
+            box-shadow: 0 10px 28px rgba(0,0,0,.38), inset 0 1px #fff; 
+            transition: transform .15s, box-shadow .25s, background .25s; 
+            position: relative; 
+            z-index: 2;
         }
+        .btn:active { transform: scale(0.975); }
+        .btn-success { background: linear-gradient(135deg,#60ffb5,#00cf73); box-shadow: 0 10px 30px rgba(0,255,136,.32); }
+        
+        .btn-red { background: linear-gradient(135deg, #ff6b6b, #e60000); color: white; box-shadow: 0 10px 30px rgba(255, 68, 68, 0.3); border: none; }
+        .btn-red:active { transform: scale(0.975); }
 
-        .btn:hover { background: var(--accent); transform: scale(1.03); }
-        .btn-red { background: var(--error); color: white; margin-top: 20px; }
-        .btn-red:hover { background: #ff2222; }
+        .error-card { border-color: rgba(255, 82, 82, 0.4); background: linear-gradient(145deg, rgba(255,0,0,.05), rgba(255,255,255,.02)); box-shadow: 0 38px 100px rgba(0,0,0,.72), inset 0 1.5px rgba(255,82,82,.2); }
+        .error-icon { font-size: 55px; margin: 0 auto 16px; filter: drop-shadow(0 0 15px rgba(255,82,82,0.5)); position: relative; z-index: 2; }
+        .error-title { color: var(--error); font-size: 24px; font-weight: 800; margin-bottom: 12px; text-shadow: 0 0 20px rgba(255,82,82,.4); position: relative; z-index: 2; }
 
-        .footer { 
-            margin-top: 80px; color: #333; font-size: 10px; 
-            letter-spacing: 2px; text-transform: uppercase; font-weight: bold; 
-        }
+        .contact-admin { display: inline-flex; align-items: center; justify-content: center; margin-top: 15px; padding: 12px 24px; border-radius: 999px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); color: var(--muted); font-size: 13px; font-weight: 700; text-decoration: none; transition: 0.3s; position: relative; z-index: 2; }
+        .contact-admin:hover { background: rgba(255, 255, 255, 0.12); color: #fff; border-color: rgba(255, 255, 255, 0.25); transform: scale(1.04); }
 
-        /* Small contact only — does not break layout */
-        .contact-admin {
-            display: inline-block;
-            margin-top: 18px;
-            padding: 8px 14px;
-            font-size: 12px;
-            font-weight: 700;
-            color: #2AABEE;
-            text-decoration: none;
-            border: 1px solid rgba(42,171,238,0.4);
-            border-radius: 999px;
-            background: rgba(42,171,238,0.08);
-            line-height: 1.2;
-            white-space: nowrap;
-        }
-        .contact-admin:active { opacity: 0.85; }
+        .footer { margin-top: 40px; color: rgba(255,255,255,0.22); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; font-weight: 800; }
     </style>
 </head>
 <body>
@@ -125,25 +149,24 @@
     
     <!-- NAME REGISTRATION PROMPT -->
     <div id="namePrompt" class="screen-container">
-        <div class="name-card">
-            <h2 style="color: white;">Welcome to DGXEN</h2>
-            <p style="color: #888; font-size: 14px;">Please enter your name to register your device on our network.</p>
+        <div class="glass-card">
+            <div class="glass-glare"></div>
+            <div class="key-icon"><img src="./assets/logo.png" alt="DGXEN" onerror="this.style.display='none'"></div>
+            <h2>Welcome to DGXEN</h2>
+            <p class="card-p">Please enter your name to register your device on our secure network.</p>
             <input type="text" id="userNameInput" class="name-input" placeholder="Enter your name..." autocomplete="off">
             <button class="btn" id="saveNameBtn">REGISTER DEVICE</button>
-            <p id="regStatus" style="color: var(--error); font-size: 12px; margin-top: 10px; height: 15px;"></p>
+            <p id="regStatus" style="color: var(--error); font-size: 13px; font-weight: 600; margin-top: 15px; height: 15px; position: relative; z-index: 2;"></p>
         </div>
     </div>
 
     <!-- MAIN KEY GENERATOR -->
     <div id="mainContainer" class="screen-container">
-        <div class="key-icon">
-            <img src="./assets/logo.png" alt="DGXEN">
-        </div>
-        <h1>Access Unlocked</h1>
-        <p class="subtitle">Your device-locked license key is ready.</p>
-        <div class="card">
+        <div class="glass-card">
+            <div class="glass-glare"></div>
+            <div class="key-icon"><img src="./assets/logo.png" alt="DGXEN" onerror="this.style.display='none'"></div>
             <h2>Generation Success!</h2>
-            <p class="card-p">This key is locked to your device. Share it, and it won't work for others.</p>
+            <p class="card-p">One key - One login</p>
             <div class="key-box">
                 <span id="finalKey">SECURE FETCHING...</span>
             </div>
@@ -151,39 +174,34 @@
         </div>
     </div>
 
-    <!-- BANNED SCREEN -->
+    <!-- DEVICE BANNED SCREEN -->
     <div id="bannedContainer" class="screen-container">
-        <div class="key-icon" style="margin: 0 auto 15px;">
-            <img src="./assets/logo.png" alt="DGXEN">
-        </div>
-        <div class="error-card">
+        <div class="glass-card error-card">
+            <div class="glass-glare"></div>
             <div class="error-icon">💀</div>
-            <div class="error-title">Account Banned</div>
-            <p id="bannedReason" style="color:#888; font-size: 14px; line-height: 1.5; margin: 0;">Your device has been permanently banned from the DGXEN network by the administrator.</p>
-            <a class="contact-admin" href="https://t.me/PUBLISHER_0" target="_blank" rel="noopener noreferrer">Contact Admin</a>
+            <div class="error-title">Device Banned</div>
+            <p class="card-p" id="banReasonText" style="color: #d1d1d1; line-height: 1.6;">Your device has been permanently blacklisted from the DGXEN network. You can no longer generate access keys.</p>
+            <a href="https://t.me/DGXEN" target="_blank" class="contact-admin">Contact Support</a>
         </div>
     </div>
 
     <!-- BYPASS SCREEN -->
     <div id="bypassContainer" class="screen-container">
-        <div class="error-card">
+        <div class="glass-card error-card">
+            <div class="glass-glare"></div>
             <div class="error-icon">🚫</div>
             <div class="error-title">Bypass Detected!</div>
-            <p style="color:#888; font-size: 14px; line-height: 1.5;">Direct access is prohibited. Please use the official link from the script to generate your key.</p>
-            <button class="btn btn-red" id="returnBtn">RETURN TO STEPS</button>
-            <div>
-                <a class="contact-admin" href="https://t.me/PUBLISHER_0" target="_blank" rel="noopener noreferrer">Contact Admin</a>
-            </div>
+            <p class="card-p" style="color: #d1d1d1;">Direct access is prohibited. Please use the official App link to generate your key.</p>
+            <button class="btn btn-red" id="returnBtn" style="margin-top: 10px;">RETURN TO STEPS</button>
         </div>
     </div>
 
     <div class="footer">DGXEN SECURITY SYSTEM</div>
 </div>
 
-<!-- FIREBASE & LOGIC -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, get, set, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const firebaseConfig = {
         databaseURL: "https://login-pass-1a196-default-rtdb.firebaseio.com/"
@@ -193,9 +211,7 @@
 
     function switchScreen(screenId) {
         const screens = ['namePrompt', 'mainContainer', 'bannedContainer', 'bypassContainer'];
-        screens.forEach(id => {
-            document.getElementById(id).style.display = 'none';
-        });
+        screens.forEach(id => { document.getElementById(id).style.display = 'none'; });
         document.getElementById(screenId).style.display = 'block';
     }
 
@@ -246,7 +262,7 @@
                 }
 
                 document.getElementById('regStatus').style.color = "var(--accent)";
-                document.getElementById('regStatus').innerText = "Registering...";
+                document.getElementById('regStatus').innerText = "Registering device...";
                 document.getElementById('saveNameBtn').disabled = true;
 
                 deviceId = generateUUID();
@@ -276,9 +292,12 @@
                 }
 
                 if (snapshot.val().status === 'banned') {
-                    const reason = snapshot.val().banReason || "Your device has been permanently banned from the DGXEN network by the administrator.";
-                    const el = document.getElementById('bannedReason');
-                    if (el) el.innerText = reason;
+                    let dbReason = snapshot.val().banReason || "";
+                    if (dbReason.toLowerCase().includes("generate a new key") || dbReason === "") {
+                        document.getElementById('banReasonText').innerText = "Your device has been permanently blacklisted from the DGXEN network. You can no longer generate access keys.";
+                    } else {
+                        document.getElementById('banReasonText').innerText = "Reason: " + dbReason;
+                    }
                     switchScreen('bannedContainer');
                     return;
                 }
@@ -299,54 +318,51 @@
             document.getElementById('finalKey').innerText = "GENERATING...";
 
             const deviceId = localStorage.getItem('dgxen_device_id');
-            if(!deviceId) {
-                location.reload(); 
-                return;
-            }
+            if(!deviceId) { location.reload(); return; }
 
-            const settingsSnap = await get(ref(db, 'settings/keyExpiryHours'));
-            const expiryHours = settingsSnap.exists() ? settingsSnap.val() : 24;
+            import('https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js').then(async (module) => {
+                const { ref, get, update } = module;
 
-            const userRef = ref(db, 'users/' + deviceId);
-            const userSnap = await get(userRef);
-            
-            if (userSnap.exists()) {
-                const userData = userSnap.val();
-                const now = Date.now();
+                const settingsSnap = await get(ref(db, 'settings/keyExpiryHours'));
+                const expiryHours = settingsSnap.exists() ? settingsSnap.val() : 24;
 
-                if (userData.lastGeneratedKey && userData.keyExpiresAt && now < userData.keyExpiresAt) {
-                    displayKeyInfo(userData.lastGeneratedKey, userData.keyExpiresAt, expiryHours);
-                    return;
+                const userRef = ref(db, 'users/' + deviceId);
+                const userSnap = await get(userRef);
+                
+                if (userSnap.exists()) {
+                    const userData = userSnap.val();
+                    const now = Date.now();
+
+                    if (userData.lastGeneratedKey && userData.keyExpiresAt && now < userData.keyExpiresAt) {
+                        displayKeyInfo(userData.lastGeneratedKey, userData.keyExpiresAt, expiryHours);
+                        return;
+                    }
+                    
+                    const newKey = "DGXEN-" + 
+                        Math.random().toString(36).substring(2,6).toUpperCase() + "-" + 
+                        Math.random().toString(36).substring(2,6).toUpperCase() + "-" + 
+                        Math.random().toString(36).substring(2,6).toUpperCase() + "-" + 
+                        Math.random().toString(36).substring(2,6).toUpperCase();
+                    
+                    const expiresAt = now + (expiryHours * 60 * 60 * 1000);
+                    
+                    await update(userRef, { lastGeneratedKey: newKey, keyExpiresAt: expiresAt });
+                    displayKeyInfo(newKey, expiresAt, expiryHours);
+                } else {
+                    localStorage.removeItem('dgxen_device_id');
+                    location.reload();
                 }
-                
-                const newKey = "DGXEN-" + 
-                    Math.random().toString(36).substring(2,6).toUpperCase() + "-" + 
-                    Math.random().toString(36).substring(2,6).toUpperCase() + "-" + 
-                    Math.random().toString(36).substring(2,6).toUpperCase() + "-" + 
-                    Math.random().toString(36).substring(2,6).toUpperCase();
-                
-                const expiresAt = now + (expiryHours * 60 * 60 * 1000);
-                
-                await update(userRef, {
-                    lastGeneratedKey: newKey,
-                    keyExpiresAt: expiresAt
-                });
-                
-                displayKeyInfo(newKey, expiresAt, expiryHours);
-            } else {
-                localStorage.removeItem('dgxen_device_id');
-                location.reload();
-            }
+            }).catch(err => {
+                document.getElementById('finalKey').innerText = "DB CONNECTION ERROR";
+            });
 
         } catch (err) {
             document.getElementById('finalKey').innerText = "ERROR FETCHING KEY";
-            console.error(err);
         }
     }
 
     function displayKeyInfo(key, expiresAt, hours) {
         document.getElementById('finalKey').innerText = key;
-        
         const expiryDate = new Date(expiresAt);
         const timeString = expiryDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         
@@ -354,34 +370,29 @@
         if(!expiryText) {
             expiryText = document.createElement('p');
             expiryText.id = 'expiryTextInfo';
-            expiryText.style = "color: #ffae00; font-size: 12.5px; font-weight: bold; margin-top: 15px; letter-spacing: 0.5px;";
-            
+            expiryText.style = "color: #ffae00; font-size: 13px; font-weight: bold; margin: 12px 0 0; letter-spacing: 0.5px; position: relative; z-index: 2;";
             const keyElement = document.getElementById('finalKey');
-            if(keyElement && keyElement.parentElement) {
-                keyElement.parentElement.appendChild(expiryText);
-            }
+            if(keyElement && keyElement.parentElement) keyElement.parentElement.appendChild(expiryText);
         }
         expiryText.innerHTML = `⏳ Valid for ${hours} Hours (Expires at ${timeString})`;
     }
 
     document.getElementById('copyBtn').addEventListener('click', () => {
         const keyText = document.getElementById('finalKey').innerText;
-        if(keyText.includes("SECURE") || keyText.includes("CONNECT") || keyText.includes("DENIED") || keyText.includes("ERROR") || keyText.includes("GENERATING")) return;
+        if(keyText.includes("SECURE") || keyText.includes("ERROR") || keyText.includes("GENERATING")) return;
 
         navigator.clipboard.writeText(keyText).then(() => {
             const btn = document.getElementById('copyBtn');
             btn.innerText = "COPIED SUCCESSFULLY! ✅";
-            btn.style.background = "#00ff88";
+            btn.classList.add('btn-success');
             setTimeout(() => { 
                 btn.innerText = "COPY TO CLIPBOARD"; 
-                btn.style.background = "#ffffff";
+                btn.classList.remove('btn-success');
             }, 2000);
         });
     });
 
-    document.getElementById('returnBtn').addEventListener('click', () => {
-        location.href = 'steps.html';
-    });
+    document.getElementById('returnBtn').addEventListener('click', () => { location.href = 'steps.html'; });
 
     const footerText = document.querySelector('.footer');
     if(footerText) {
@@ -390,12 +401,8 @@
             webTimer = setTimeout(() => {
                 const realId = localStorage.getItem('dgxen_device_id');
                 if(realId) {
-                    navigator.clipboard.writeText(realId).then(() => {
-                        alert("Real Device ID Copied for Admin:\n" + realId);
-                    });
-                } else {
-                    alert("No Device ID found. Please register your name first.");
-                }
+                    navigator.clipboard.writeText(realId).then(() => { alert("Real Device ID Copied for Admin:\n" + realId); });
+                } else { alert("No Device ID found."); }
                 e.preventDefault();
             }, 1200);
         });
