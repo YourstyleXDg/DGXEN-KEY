@@ -259,17 +259,12 @@
         });
     }
 
-    async function verifyAndRun() {
-        // 🔥 STRICT BYPASS CHECK: Agar reload kiya gaya toh turant bypass.
-        if (sessionStorage.getItem('dgxen_page_already_loaded') === 'true') {
-            switchScreen('bypassContainer');
-            return;
-        }
-
+        async function verifyAndRun() {
         const params = new URLSearchParams(window.location.search);
         const source = String(params.get('source') || '').toLowerCase().trim();
         const referrer = (document.referrer || "").toLowerCase();
 
+        // Save native device id from login Get Key URL
         try {
             const nd = (params.get('deviceId') || params.get('fp') || params.get('id') || '').trim();
             if (nd) localStorage.setItem('deviceId', nd);
@@ -280,6 +275,8 @@
             sessionStorage.getItem('dgxen_secure_pass') === 'true' ||
             sessionStorage.getItem('dgxen_keygen_ok') === '1';
 
+        const isOfficial = (source === 'official' || source === 'app' || source === '1');
+
         const refOk =
             referrer.includes('earnlinks') ||
             referrer.includes('vplink') ||
@@ -289,27 +286,40 @@
             referrer.includes('steps') ||
             referrer.includes('dgxen');
 
-        const isValidAccess = (
-            securePass ||
-            source === 'official' ||
-            source === 'app' ||
-            source === '1' ||
-            refOk
-        );
+        const isValidAccess = (securePass || isOfficial || refOk);
 
         if (!isValidAccess) {
             switchScreen('bypassContainer');
             return;
         }
 
-        // 🔥 MARK TAB AS USED & DESTROY TOKENS
-        sessionStorage.setItem('dgxen_page_already_loaded', 'true');
+        // 🔥 THE FIX: TIME-BASED STRICT BYPASS GUARD 🔥
+        // 8-second ka grace period jisse vplink ke background double-redirects block na ho.
+        // Par 8 sec ke baad kiya gaya koi bhi manual refresh ya reused tab strictly block hoga.
+        const now = Date.now();
+        const loadedAt = Number(sessionStorage.getItem('dgxen_page_loaded_at') || 0);
+        const timeSinceLoad = now - loadedAt;
+        const isReload = loadedAt > 0 && timeSinceLoad > 8000; // 8 seconds grace
+
+        // Agar user grace period ke baad refresh karta hai bina naye pass ke, block!
+        if (isReload && !securePass && !isOfficial) {
+            switchScreen('bypassContainer');
+            return;
+        }
+
+        // Nayi successful entry aane par tab ka timer set/reset karo
+        if (securePass || isOfficial || loadedAt === 0) {
+            sessionStorage.setItem('dgxen_page_loaded_at', String(now));
+        }
+
+        // 🔥 TOKENS DESTROYED IMMEDIATELY
         try {
             localStorage.removeItem('dgxen_secure_pass');
             sessionStorage.removeItem('dgxen_secure_pass');
             sessionStorage.removeItem('dgxen_keygen_ok');
         } catch (e) {}
 
+        // Clean URL after access granted
         try {
             if (window.history.replaceState) {
                 const cleanUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
@@ -345,12 +355,12 @@
                     try {
                         const reqSnap = await get(ref(db, 'deviceRequests'));
                         if (reqSnap.exists()) {
-                            const now = Date.now();
+                            const now_time = Date.now();
                             const reqs = reqSnap.val() || {};
                             for (const k of Object.keys(reqs)) {
                                 const r = reqs[k] || {};
                                 const exp = Number(r.expiresAt || 0);
-                                if (exp && now > exp) continue;
+                                if (exp && now_time > exp) continue;
                                 const did = String(r.deviceId || k || '').trim();
                                 if (did) nativeCandidates.add(did);
                                 const loc = String(r.localId || r.localStorageId || '').trim();
@@ -359,7 +369,6 @@
                         }
                     } catch (eReq) {}
 
-                    // Trial System Cleanup integration (Intact)
                     try {
                         const allSnap = await get(ref(db, 'users'));
                         if (allSnap.exists()) {
@@ -401,6 +410,33 @@
 
                 proceedToKey();
             };
+        } else {
+            try {
+                const userRef = ref(db, 'users/' + deviceId);
+                const snapshot = await get(userRef);
+
+                if (!snapshot.exists()) {
+                    localStorage.removeItem('dgxen_device_id');
+                    location.reload();
+                    return;
+                }
+
+                if (snapshot.val().status === 'banned') {
+                    let dbReason = snapshot.val().banReason || "";
+                    if (dbReason.toLowerCase().includes("generate a new key") || dbReason === "") {
+                        document.getElementById('banReasonText').innerText = "Your device has been permanently blacklisted from the DGXEN network. You can no longer generate access keys.";
+                    } else {
+                        document.getElementById('banReasonText').innerText = "Reason: " + dbReason;
+                    }
+                    switchScreen('bannedContainer');
+                    return;
+                }
+            } catch (e) {
+                console.error("Firebase read error:", e);
+            }
+            proceedToKey();
+        }
+    }
         } else {
             try {
                 const userRef = ref(db, 'users/' + deviceId);
