@@ -141,29 +141,6 @@
         .contact-admin:hover { background: rgba(255, 255, 255, 0.12); color: #fff; border-color: rgba(255, 255, 255, 0.25); transform: scale(1.04); }
 
         .footer { margin-top: 40px; color: rgba(255,255,255,0.22); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; font-weight: 800; }
-
-        /* PREMIUM LOADER CSS */
-        .loader-circle {
-            width: 65px;
-            height: 65px;
-            border: 4px solid rgba(0, 255, 136, 0.15);
-            border-top-color: var(--accent);
-            border-radius: 50%;
-            margin: 0 auto;
-            animation: spin 1s linear infinite, glow 2s ease-in-out infinite alternate;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        @keyframes glow {
-            100% { box-shadow: 0 0 25px rgba(0, 255, 136, 0.5); }
-        }
-
-        @keyframes pulseText {
-            50% { opacity: 0.5; }
-        }
     </style>
 </head>
 <body>
@@ -180,16 +157,6 @@
             <input type="text" id="userNameInput" class="name-input" placeholder="Enter your name..." autocomplete="off">
             <button class="btn" id="saveNameBtn">REGISTER DEVICE</button>
             <p id="regStatus" style="color: var(--error); font-size: 13px; font-weight: 600; margin-top: 15px; height: 15px; position: relative; z-index: 2;"></p>
-        </div>
-    </div>
-
-    <!-- LOADER SCREEN -->
-    <div id="loaderContainer" class="screen-container">
-        <div class="glass-card" style="padding: 55px 30px;">
-            <div class="glass-glare"></div>
-            <div class="loader-circle"></div>
-            <h2 style="margin-top: 25px; font-size: 20px; animation: pulseText 1.5s infinite;">GENERATING KEY...</h2>
-            <p class="card-p" style="margin-bottom: 0;">Securing your connection</p>
         </div>
     </div>
 
@@ -243,13 +210,9 @@
     const db = getDatabase(app);
 
     function switchScreen(screenId) {
-        const screens = ['namePrompt', 'loaderContainer', 'mainContainer', 'bannedContainer', 'bypassContainer'];
-        screens.forEach(id => { 
-            const el = document.getElementById(id);
-            if (el) el.style.display = 'none'; 
-        });
-        const target = document.getElementById(screenId);
-        if (target) target.style.display = 'block';
+        const screens = ['namePrompt', 'mainContainer', 'bannedContainer', 'bypassContainer'];
+        screens.forEach(id => { document.getElementById(id).style.display = 'none'; });
+        document.getElementById(screenId).style.display = 'block';
     }
 
     function generateUUID() {
@@ -259,73 +222,32 @@
         });
     }
 
-        async function verifyAndRun() {
+    async function verifyAndRun() {
         const params = new URLSearchParams(window.location.search);
-        const source = String(params.get('source') || '').toLowerCase().trim();
+        const source = params.get('source');
         const referrer = (document.referrer || "").toLowerCase();
+        
+        const securePass = localStorage.getItem('dgxen_secure_pass');
 
-        // Save native device id from login Get Key URL
-        try {
-            const nd = (params.get('deviceId') || params.get('fp') || params.get('id') || '').trim();
-            if (nd) localStorage.setItem('deviceId', nd);
-        } catch (e) {}
-
-        const securePass =
-            localStorage.getItem('dgxen_secure_pass') === 'true' ||
-            sessionStorage.getItem('dgxen_secure_pass') === 'true' ||
-            sessionStorage.getItem('dgxen_keygen_ok') === '1';
-
-        const isOfficial = (source === 'official' || source === 'app' || source === '1');
-
-        const refOk =
-            referrer.includes('earnlinks') ||
-            referrer.includes('vplink') ||
-            referrer.includes('move2link') ||
-            referrer.includes('linkvertise') ||
-            referrer.includes('steps.html') ||
-            referrer.includes('steps') ||
-            referrer.includes('dgxen');
-
-        const isValidAccess = (securePass || isOfficial || refOk);
+        const isValidAccess = (
+            securePass === 'true' || 
+            source === "official" ||
+            referrer.includes("earnlinks") ||
+            referrer.includes("vplink") ||
+            referrer.includes("steps.html")
+        );
 
         if (!isValidAccess) {
             switchScreen('bypassContainer');
             return;
         }
 
-        // 🔥 THE FIX: TIME-BASED STRICT BYPASS GUARD 🔥
-        // 8-second ka grace period jisse vplink ke background double-redirects block na ho.
-        // Par 8 sec ke baad kiya gaya koi bhi manual refresh ya reused tab strictly block hoga.
-        const now = Date.now();
-        const loadedAt = Number(sessionStorage.getItem('dgxen_page_loaded_at') || 0);
-        const timeSinceLoad = now - loadedAt;
-        const isReload = loadedAt > 0 && timeSinceLoad > 8000; // 8 seconds grace
+        localStorage.removeItem('dgxen_secure_pass');
 
-        // Agar user grace period ke baad refresh karta hai bina naye pass ke, block!
-        if (isReload && !securePass && !isOfficial) {
-            switchScreen('bypassContainer');
-            return;
+        if (window.history.replaceState) {
+            const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+            window.history.replaceState({}, document.title, cleanUrl);
         }
-
-        // Nayi successful entry aane par tab ka timer set/reset karo
-        if (securePass || isOfficial || loadedAt === 0) {
-            sessionStorage.setItem('dgxen_page_loaded_at', String(now));
-        }
-
-        // 🔥 TOKENS DESTROYED IMMEDIATELY
-        try {
-            localStorage.removeItem('dgxen_secure_pass');
-            sessionStorage.removeItem('dgxen_secure_pass');
-            sessionStorage.removeItem('dgxen_keygen_ok');
-        } catch (e) {}
-
-        // Clean URL after access granted
-        try {
-            if (window.history.replaceState) {
-                const cleanUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
-                window.history.replaceState({}, document.title, cleanUrl);
-            }
-        } catch (e) {}
 
         let deviceId = localStorage.getItem('dgxen_device_id');
 
@@ -347,62 +269,10 @@
                 localStorage.setItem('dgxen_device_id', deviceId);
 
                 try {
-                    let nativeId = '';
-                    try { nativeId = (localStorage.getItem('deviceId') || sessionStorage.getItem('deviceId') || '').trim(); } catch (e) {}
-
-                    const nativeCandidates = new Set();
-                    if (nativeId) nativeCandidates.add(nativeId);
-                    try {
-                        const reqSnap = await get(ref(db, 'deviceRequests'));
-                        if (reqSnap.exists()) {
-                            const now_time = Date.now();
-                            const reqs = reqSnap.val() || {};
-                            for (const k of Object.keys(reqs)) {
-                                const r = reqs[k] || {};
-                                const exp = Number(r.expiresAt || 0);
-                                if (exp && now_time > exp) continue;
-                                const did = String(r.deviceId || k || '').trim();
-                                if (did) nativeCandidates.add(did);
-                                const loc = String(r.localId || r.localStorageId || '').trim();
-                                if (loc) nativeCandidates.add(loc);
-                            }
-                        }
-                    } catch (eReq) {}
-
-                    try {
-                        const allSnap = await get(ref(db, 'users'));
-                        if (allSnap.exists()) {
-                            const all = allSnap.val() || {};
-                            const norms = new Set([...nativeCandidates].map(x => x.toLowerCase()));
-                            for (const uid of Object.keys(all)) {
-                                const u = all[uid] || {};
-                                if (!u.isTrial) continue;
-                                const ids = [uid, u.deviceId, u.fingerprint, u.lastDeviceId, u.androidId]
-                                    .map(x => String(x || '').trim().toLowerCase()).filter(Boolean);
-                                const hit = ids.some(id => norms.has(id));
-                                const trialKey = String(u.lastGeneratedKey || u.key || '');
-                                const isTrialKey = /^DGXEN-TRIAL-/i.test(trialKey);
-                                if (hit || (isTrialKey && nativeCandidates.size > 0 && ids.length)) {
-                                    await set(ref(db, 'users/' + uid), null);
-                                }
-                            }
-                        }
-                    } catch (eMerge) { console.warn('trial merge', eMerge); }
-
-                    if (!nativeId && nativeCandidates.size) {
-                        const arr = [...nativeCandidates];
-                        const nonUuid = arr.find(x => !/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(x));
-                        nativeId = nonUuid || arr[0];
-                    }
-
                     await set(ref(db, 'users/' + deviceId), {
                         name: name,
                         status: 'active',
-                        joined: new Date().toISOString(),
-                        isTrial: false,
-                        deviceId: nativeId || null,
-                        fingerprint: nativeId || null,
-                        lastDeviceId: nativeId || null
+                        joined: new Date().toISOString()
                     });
                 } catch (e) {
                     console.error("Firebase write error:", e);
@@ -414,34 +284,7 @@
             try {
                 const userRef = ref(db, 'users/' + deviceId);
                 const snapshot = await get(userRef);
-
-                if (!snapshot.exists()) {
-                    localStorage.removeItem('dgxen_device_id');
-                    location.reload();
-                    return;
-                }
-
-                if (snapshot.val().status === 'banned') {
-                    let dbReason = snapshot.val().banReason || "";
-                    if (dbReason.toLowerCase().includes("generate a new key") || dbReason === "") {
-                        document.getElementById('banReasonText').innerText = "Your device has been permanently blacklisted from the DGXEN network. You can no longer generate access keys.";
-                    } else {
-                        document.getElementById('banReasonText').innerText = "Reason: " + dbReason;
-                    }
-                    switchScreen('bannedContainer');
-                    return;
-                }
-            } catch (e) {
-                console.error("Firebase read error:", e);
-            }
-            proceedToKey();
-        }
-    }
-        } else {
-            try {
-                const userRef = ref(db, 'users/' + deviceId);
-                const snapshot = await get(userRef);
-
+                
                 if (!snapshot.exists()) {
                     localStorage.removeItem('dgxen_device_id');
                     location.reload();
@@ -466,12 +309,8 @@
     }
 
     function proceedToKey() {
-        // 🔥 2-Second Loader Implementation
-        switchScreen('loaderContainer');
-        setTimeout(() => {
-            switchScreen('mainContainer');
-            generateLockedKey();
-        }, 2000);
+        switchScreen('mainContainer');
+        generateLockedKey();
     }
 
     async function generateLockedKey() {
@@ -571,15 +410,7 @@
         footerText.addEventListener('touchmove', () => clearTimeout(webTimer));
     }
 
-    (function startKeygen() {
-        function go() { try { verifyAndRun(); } catch (e) { console.error(e); switchScreen('bypassContainer'); } }
-        if (document.readyState === 'complete' || document.readyState === 'interactive') {
-            go();
-        } else {
-            document.addEventListener('DOMContentLoaded', go);
-            window.addEventListener('load', go);
-        }
-    })();
+    window.onload = verifyAndRun;
 </script>
 </body>
 </html>
