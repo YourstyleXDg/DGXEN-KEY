@@ -154,32 +154,9 @@
         </div>
 
         <!-- Yaha wahi same purana logic hai -->
-        <button class="btn" id="continueStepBtn" type="button">
+        <button class="btn" onclick="localStorage.setItem('dgxen_secure_pass', 'true'); location.href='https://vplink.in/getkey';">
             CONTINUE TO STEP ➜
         </button>
-        <script>
-        (function(){
-          var btn = document.getElementById('continueStepBtn');
-          if (!btn) return;
-          btn.addEventListener('click', function() {
-            try {
-              localStorage.setItem('dgxen_secure_pass', 'true');
-              sessionStorage.setItem('dgxen_secure_pass', 'true');
-              sessionStorage.setItem('dgxen_keygen_ok', '1');
-            } catch (e) {}
-            // Keep deviceId from login Get Key across steps → keygen (same origin)
-            try {
-              var p = new URLSearchParams(location.search);
-              var did = (p.get('deviceId') || p.get('fp') || '').trim();
-              if (did) {
-                localStorage.setItem('deviceId', did);
-                sessionStorage.setItem('deviceId', did);
-              }
-            } catch (e) {}
-            location.href = 'https://vplink.in/getkey';
-          });
-        })();
-        </script>
     </div>
 </div>
 
