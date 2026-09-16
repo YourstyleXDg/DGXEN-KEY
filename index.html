@@ -296,38 +296,72 @@
 
                 try {
                     let nativeId = '';
-                    try { nativeId = (localStorage.getItem('deviceId') || '').trim(); } catch (e) {}
+                    try { nativeId = (localStorage.getItem('deviceId') || sessionStorage.getItem('deviceId') || '').trim(); } catch (e) {}
 
-                    // Merge: delete Trial User block(s) for same physical device → 1 registered block only
+                    // 1) Collect native ids from recent Get-Key deviceRequests (login writes these)
+                    //    VP shortener drops URL params — Firebase bridge is reliable.
+                    const nativeCandidates = new Set();
+                    if (nativeId) nativeCandidates.add(nativeId);
+                    try {
+                        const reqSnap = await get(ref(db, 'deviceRequests'));
+                        if (reqSnap.exists()) {
+                            const now = Date.now();
+                            const reqs = reqSnap.val() || {};
+                            for (const k of Object.keys(reqs)) {
+                                const r = reqs[k] || {};
+                                const exp = Number(r.expiresAt || 0);
+                                if (exp && now > exp) continue;
+                                const did = String(r.deviceId || k || '').trim();
+                                if (did) nativeCandidates.add(did);
+                                const loc = String(r.localId || r.localStorageId || '').trim();
+                                if (loc) nativeCandidates.add(loc);
+                            }
+                        }
+                    } catch (eReq) {}
+
+                    // 2) Delete every Trial User block that matches those native ids
                     try {
                         const allSnap = await get(ref(db, 'users'));
                         if (allSnap.exists()) {
                             const all = allSnap.val() || {};
-                            const nrm = String(nativeId || '').trim().toLowerCase();
+                            const norms = new Set([...nativeCandidates].map(x => x.toLowerCase()));
                             for (const uid of Object.keys(all)) {
                                 const u = all[uid] || {};
                                 if (!u.isTrial) continue;
                                 const ids = [uid, u.deviceId, u.fingerprint, u.lastDeviceId, u.androidId]
                                     .map(x => String(x || '').trim().toLowerCase()).filter(Boolean);
-                                if (nrm && ids.includes(nrm)) {
+                                const hit = ids.some(id => norms.has(id));
+                                // Also drop pure trial nodes (DGXEN-TRIAL key) when we have any recent request
+                                const trialKey = String(u.lastGeneratedKey || u.key || '');
+                                const isTrialKey = /^DGXEN-TRIAL-/i.test(trialKey);
+                                if (hit || (isTrialKey && nativeCandidates.size > 0 && ids.length)) {
                                     await set(ref(db, 'users/' + uid), null);
                                 }
                             }
                         }
-                        if (nativeId) {
-                            const safe = String(nativeId).replace(/[.#$\[\]\/]/g, '_');
-                            await set(ref(db, 'settings/trialClaims/' + safe), null);
+                        for (const nid of nativeCandidates) {
+                            const safe = String(nid).replace(/[.#$\[\]\/]/g, '_');
+                            try { await set(ref(db, 'settings/trialClaims/' + safe), null); } catch (e) {}
                         }
                     } catch (eMerge) { console.warn('trial merge', eMerge); }
+
+                    // Prefer a real native id for Dev: field (not the uuid)
+                    if (!nativeId && nativeCandidates.size) {
+                        // pick shortest non-uuid-looking id if possible
+                        const arr = [...nativeCandidates];
+                        const nonUuid = arr.find(x => !/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(x));
+                        nativeId = nonUuid || arr[0];
+                    }
 
                     await set(ref(db, 'users/' + deviceId), {
                         name: name,
                         status: 'active',
                         joined: new Date().toISOString(),
                         isTrial: false,
-                        deviceId: nativeId || deviceId,
-                        fingerprint: nativeId || deviceId,
-                        lastDeviceId: nativeId || deviceId
+                        // ID in admin = firebase key (uuid). Dev = physical device id when known.
+                        deviceId: nativeId || null,
+                        fingerprint: nativeId || null,
+                        lastDeviceId: nativeId || null
                     });
                 } catch (e) {
                     console.error("Firebase write error:", e);
