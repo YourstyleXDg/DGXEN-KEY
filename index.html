@@ -339,10 +339,7 @@
                                 }
                             }
                         }
-                        for (const nid of nativeCandidates) {
-                            const safe = String(nid).replace(/[.#$\[\]\/]/g, '_');
-                            try { await set(ref(db, 'settings/trialClaims/' + safe), null); } catch (e) {}
-                        }
+                        // trialClaims kept forever — device already used free trial
                     } catch (eMerge) { console.warn('trial merge', eMerge); }
 
                     // Prefer a real native id for Dev: field (not the uuid)
