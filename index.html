@@ -233,25 +233,42 @@
             if (nd) localStorage.setItem('deviceId', nd);
         } catch (e) {}
 
-        const securePass =
-            localStorage.getItem('dgxen_secure_pass') === 'true' ||
-            sessionStorage.getItem('dgxen_secure_pass') === 'true' ||
-            sessionStorage.getItem('dgxen_keygen_ok') === '1';
+        // One-time gate flag set by steps.html right before sending the user
+        // to the shortener. Read once, then consumed (removed) immediately
+        // below — exactly like the original system — so it can never be
+        // replayed by revisiting the URL from a fresh context.
+        const securePassOneTime = localStorage.getItem('dgxen_secure_pass') === 'true';
 
+        // Session-scoped memory that THIS TAB already passed the gate
+        // legitimately. Unlike localStorage this can never be carried into a
+        // new tab or a different browser/device — pasting the link
+        // somewhere new still requires going through the real gate — but it
+        // correctly survives a refresh or re-entering the same URL in the
+        // SAME tab, which is the legitimate case that was being incorrectly
+        // flagged as "Bypass Detected".
+        const sessionOk = sessionStorage.getItem('dgxen_keygen_ok') === '1';
+
+        // Only the actual shortener domains this flow is meant to go
+        // through — NOT the site's own domain. Matching on the site's own
+        // name here (as a later "fix" attempt had done) meant any ordinary
+        // same-site navigation — clicking over from another page on this
+        // same site, or even just visiting twice in a row — satisfied the
+        // check on its own, skipping the ad-wall entirely. Likewise
+        // "source=app" / "source=1" were bare, unverified URL parameters
+        // that anyone could add by hand with zero proof of having gone
+        // through the real flow. Both are removed; this restores the
+        // original strict behavior.
         const refOk =
             referrer.includes('earnlinks') ||
             referrer.includes('vplink') ||
             referrer.includes('move2link') ||
             referrer.includes('linkvertise') ||
-            referrer.includes('steps.html') ||
-            referrer.includes('steps') ||
-            referrer.includes('dgxen');
+            referrer.includes('steps.html');
 
         const isValidAccess = (
-            securePass ||
+            securePassOneTime ||
+            sessionOk ||
             source === 'official' ||
-            source === 'app' ||
-            source === '1' ||
             refOk
         );
 
@@ -260,12 +277,12 @@
             return;
         }
 
-        // Session grant so shortener back/forward / second open still works
-        try {
-            sessionStorage.setItem('dgxen_keygen_ok', '1');
-            sessionStorage.setItem('dgxen_secure_pass', 'true');
-        } catch (e) {}
+        // Consume the one-time flag immediately so it can never be reused...
         try { localStorage.removeItem('dgxen_secure_pass'); } catch (e) {}
+        // ...and remember, for this tab only, that access was legitimately
+        // granted — this is what lets a refresh or re-entering the same URL
+        // in the same tab keep working without re-proving the referrer.
+        try { sessionStorage.setItem('dgxen_keygen_ok', '1'); } catch (e) {}
 
         // Clean URL only AFTER access granted (keep query until then for source=)
         try {
