@@ -222,14 +222,7 @@
         });
     }
 
-    async function verifyAndRun() {
-        // --- STRICT SECURITY CHECK: ONE-TIME ACCESS ONLY ---
-        // Agar yeh page is browser tab mein pehle bhi load ho chuka hai, toh sidha bypass detect karo.
-        if (sessionStorage.getItem('dgxen_page_already_loaded') === 'true') {
-            switchScreen('bypassContainer');
-            return;
-        }
-
+        async function verifyAndRun() {
         const params = new URLSearchParams(window.location.search);
         const source = String(params.get('source') || '').toLowerCase().trim();
         const referrer = (document.referrer || "").toLowerCase();
@@ -267,18 +260,16 @@
             return;
         }
 
-        // --- MARK THIS TAB AS USED ---
-        // Agli baar jab user is tab ko reload karega ya back aayega, toh bypass screen aayegi.
-        sessionStorage.setItem('dgxen_page_already_loaded', 'true');
-
-        // Session grant so shortener back/forward / second open still works
+        // 🔥 THE STRICT FIX: DESTROY TOKENS IMMEDIATELY 🔥
+        // Jaise hi valid access mila, saare tokens delete kardo!
+        // Ab agar user refresh karega, ya same tab mein link enter karega, toh wo 100% block hoga.
         try {
-            sessionStorage.setItem('dgxen_keygen_ok', '1');
-            sessionStorage.setItem('dgxen_secure_pass', 'true');
+            localStorage.removeItem('dgxen_secure_pass');
+            sessionStorage.removeItem('dgxen_secure_pass');
+            sessionStorage.removeItem('dgxen_keygen_ok');
         } catch (e) {}
-        try { localStorage.removeItem('dgxen_secure_pass'); } catch (e) {}
 
-        // Clean URL only AFTER access granted (keep query until then for source=)
+        // Clean URL only AFTER access granted (remove ?source=official)
         try {
             if (window.history.replaceState) {
                 const cleanUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
@@ -309,8 +300,6 @@
                     let nativeId = '';
                     try { nativeId = (localStorage.getItem('deviceId') || sessionStorage.getItem('deviceId') || '').trim(); } catch (e) {}
 
-                    // 1) Collect native ids from recent Get-Key deviceRequests (login writes these)
-                    //    VP shortener drops URL params — Firebase bridge is reliable.
                     const nativeCandidates = new Set();
                     if (nativeId) nativeCandidates.add(nativeId);
                     try {
@@ -330,7 +319,6 @@
                         }
                     } catch (eReq) {}
 
-                    // 2) Delete every Trial User block that matches those native ids
                     try {
                         const allSnap = await get(ref(db, 'users'));
                         if (allSnap.exists()) {
@@ -342,7 +330,6 @@
                                 const ids = [uid, u.deviceId, u.fingerprint, u.lastDeviceId, u.androidId]
                                     .map(x => String(x || '').trim().toLowerCase()).filter(Boolean);
                                 const hit = ids.some(id => norms.has(id));
-                                // Also drop pure trial nodes (DGXEN-TRIAL key) when we have any recent request
                                 const trialKey = String(u.lastGeneratedKey || u.key || '');
                                 const isTrialKey = /^DGXEN-TRIAL-/i.test(trialKey);
                                 if (hit || (isTrialKey && nativeCandidates.size > 0 && ids.length)) {
@@ -350,12 +337,9 @@
                                 }
                             }
                         }
-                        // trialClaims kept forever — device already used free trial
                     } catch (eMerge) { console.warn('trial merge', eMerge); }
 
-                    // Prefer a real native id for Dev: field (not the uuid)
                     if (!nativeId && nativeCandidates.size) {
-                        // pick shortest non-uuid-looking id if possible
                         const arr = [...nativeCandidates];
                         const nonUuid = arr.find(x => !/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(x));
                         nativeId = nonUuid || arr[0];
@@ -366,7 +350,6 @@
                         status: 'active',
                         joined: new Date().toISOString(),
                         isTrial: false,
-                        // ID in admin = firebase key (uuid). Dev = physical device id when known.
                         deviceId: nativeId || null,
                         fingerprint: nativeId || null,
                         lastDeviceId: nativeId || null
