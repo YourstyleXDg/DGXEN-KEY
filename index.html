@@ -260,11 +260,16 @@
     }
 
     async function verifyAndRun() {
+        // 🔥 STRICT BYPASS CHECK: Agar reload kiya gaya toh turant bypass.
+        if (sessionStorage.getItem('dgxen_page_already_loaded') === 'true') {
+            switchScreen('bypassContainer');
+            return;
+        }
+
         const params = new URLSearchParams(window.location.search);
         const source = String(params.get('source') || '').toLowerCase().trim();
         const referrer = (document.referrer || "").toLowerCase();
 
-        // Save native device id from login Get Key URL
         try {
             const nd = (params.get('deviceId') || params.get('fp') || params.get('id') || '').trim();
             if (nd) localStorage.setItem('deviceId', nd);
@@ -297,14 +302,14 @@
             return;
         }
 
-        // 🔥 THE STRICT FIX: DESTROY TOKENS IMMEDIATELY 🔥
+        // 🔥 MARK TAB AS USED & DESTROY TOKENS
+        sessionStorage.setItem('dgxen_page_already_loaded', 'true');
         try {
             localStorage.removeItem('dgxen_secure_pass');
             sessionStorage.removeItem('dgxen_secure_pass');
             sessionStorage.removeItem('dgxen_keygen_ok');
         } catch (e) {}
 
-        // Clean URL only AFTER access granted (remove ?source=official)
         try {
             if (window.history.replaceState) {
                 const cleanUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
@@ -354,6 +359,7 @@
                         }
                     } catch (eReq) {}
 
+                    // Trial System Cleanup integration (Intact)
                     try {
                         const allSnap = await get(ref(db, 'users'));
                         if (allSnap.exists()) {
@@ -424,9 +430,8 @@
     }
 
     function proceedToKey() {
-        // Pehle Loader dikhao
+        // 🔥 2-Second Loader Implementation
         switchScreen('loaderContainer');
-        // 2 second (2000ms) wait karo, phir key generate karo
         setTimeout(() => {
             switchScreen('mainContainer');
             generateLockedKey();
@@ -530,7 +535,6 @@
         footerText.addEventListener('touchmove', () => clearTimeout(webTimer));
     }
 
-    // Module scripts can miss window.onload if load already fired → blank then weird state
     (function startKeygen() {
         function go() { try { verifyAndRun(); } catch (e) { console.error(e); switchScreen('bypassContainer'); } }
         if (document.readyState === 'complete' || document.readyState === 'interactive') {
