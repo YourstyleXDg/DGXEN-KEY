@@ -224,17 +224,35 @@
 
     async function verifyAndRun() {
         const params = new URLSearchParams(window.location.search);
-        const source = params.get('source');
+        const source = String(params.get('source') || '').toLowerCase().trim();
         const referrer = (document.referrer || "").toLowerCase();
-        
-        const securePass = localStorage.getItem('dgxen_secure_pass');
+
+        // Save native device id from login Get Key URL (for trial merge)
+        try {
+            const nd = (params.get('deviceId') || params.get('fp') || params.get('id') || '').trim();
+            if (nd) localStorage.setItem('deviceId', nd);
+        } catch (e) {}
+
+        const securePass =
+            localStorage.getItem('dgxen_secure_pass') === 'true' ||
+            sessionStorage.getItem('dgxen_secure_pass') === 'true' ||
+            sessionStorage.getItem('dgxen_keygen_ok') === '1';
+
+        const refOk =
+            referrer.includes('earnlinks') ||
+            referrer.includes('vplink') ||
+            referrer.includes('move2link') ||
+            referrer.includes('linkvertise') ||
+            referrer.includes('steps.html') ||
+            referrer.includes('steps') ||
+            referrer.includes('dgxen');
 
         const isValidAccess = (
-            securePass === 'true' || 
-            source === "official" ||
-            referrer.includes("earnlinks") ||
-            referrer.includes("vplink") ||
-            referrer.includes("steps.html")
+            securePass ||
+            source === 'official' ||
+            source === 'app' ||
+            source === '1' ||
+            refOk
         );
 
         if (!isValidAccess) {
@@ -242,12 +260,20 @@
             return;
         }
 
-        localStorage.removeItem('dgxen_secure_pass');
+        // Session grant so shortener back/forward / second open still works
+        try {
+            sessionStorage.setItem('dgxen_keygen_ok', '1');
+            sessionStorage.setItem('dgxen_secure_pass', 'true');
+        } catch (e) {}
+        try { localStorage.removeItem('dgxen_secure_pass'); } catch (e) {}
 
-        if (window.history.replaceState) {
-            const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
-            window.history.replaceState({}, document.title, cleanUrl);
-        }
+        // Clean URL only AFTER access granted (keep query until then for source=)
+        try {
+            if (window.history.replaceState) {
+                const cleanUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
+                window.history.replaceState({}, document.title, cleanUrl);
+            }
+        } catch (e) {}
 
         let deviceId = localStorage.getItem('dgxen_device_id');
 
@@ -269,10 +295,39 @@
                 localStorage.setItem('dgxen_device_id', deviceId);
 
                 try {
+                    let nativeId = '';
+                    try { nativeId = (localStorage.getItem('deviceId') || '').trim(); } catch (e) {}
+
+                    // Merge: delete Trial User block(s) for same physical device → 1 registered block only
+                    try {
+                        const allSnap = await get(ref(db, 'users'));
+                        if (allSnap.exists()) {
+                            const all = allSnap.val() || {};
+                            const nrm = String(nativeId || '').trim().toLowerCase();
+                            for (const uid of Object.keys(all)) {
+                                const u = all[uid] || {};
+                                if (!u.isTrial) continue;
+                                const ids = [uid, u.deviceId, u.fingerprint, u.lastDeviceId, u.androidId]
+                                    .map(x => String(x || '').trim().toLowerCase()).filter(Boolean);
+                                if (nrm && ids.includes(nrm)) {
+                                    await set(ref(db, 'users/' + uid), null);
+                                }
+                            }
+                        }
+                        if (nativeId) {
+                            const safe = String(nativeId).replace(/[.#$\[\]\/]/g, '_');
+                            await set(ref(db, 'settings/trialClaims/' + safe), null);
+                        }
+                    } catch (eMerge) { console.warn('trial merge', eMerge); }
+
                     await set(ref(db, 'users/' + deviceId), {
                         name: name,
                         status: 'active',
-                        joined: new Date().toISOString()
+                        joined: new Date().toISOString(),
+                        isTrial: false,
+                        deviceId: nativeId || deviceId,
+                        fingerprint: nativeId || deviceId,
+                        lastDeviceId: nativeId || deviceId
                     });
                 } catch (e) {
                     console.error("Firebase write error:", e);
@@ -284,7 +339,7 @@
             try {
                 const userRef = ref(db, 'users/' + deviceId);
                 const snapshot = await get(userRef);
-                
+
                 if (!snapshot.exists()) {
                     localStorage.removeItem('dgxen_device_id');
                     location.reload();
@@ -410,7 +465,16 @@
         footerText.addEventListener('touchmove', () => clearTimeout(webTimer));
     }
 
-    window.onload = verifyAndRun;
+    // Module scripts can miss window.onload if load already fired → blank then weird state
+    (function startKeygen() {
+        function go() { try { verifyAndRun(); } catch (e) { console.error(e); switchScreen('bypassContainer'); } }
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            go();
+        } else {
+            document.addEventListener('DOMContentLoaded', go);
+            window.addEventListener('load', go);
+        }
+    })();
 </script>
 </body>
 </html>
