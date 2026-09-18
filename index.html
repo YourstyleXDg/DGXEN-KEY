@@ -224,17 +224,19 @@
 
     async function verifyAndRun() {
         // Tamper-resistant signal, read from Firebase rather than trusting
-        // any single browser-storage write in isolation. gate.html — a
-        // small page reachable ONLY via vplink's own static redirect back
-        // to us (vplink's dashboard only supports one fixed destination
-        // URL, no per-request parameters) — writes a claim to
-        // settings/keyFlowClaims/<visitorId> the moment it loads, where
-        // visitorId is a random ID persisted in THIS browser's own
-        // localStorage (shared across every tab of the same browser for
-        // this origin, including whatever tab vplink opened). Landing on
-        // gate.html is itself the proof vplink was genuinely visited —
-        // there's no client-side timing guess and nothing that has to
-        // somehow survive being forwarded through vplink's redirect.
+        // any single browser-storage write in isolation. worker.js's
+        // /gate route — reachable ONLY via vplink's own static redirect
+        // back to us (vplink's dashboard only supports one fixed
+        // destination URL, no per-request parameters) — checks the
+        // request's Referer header server-side (a copy-pasted link opened
+        // directly never carries one; a genuine click-through from vplink
+        // does) and, if it passes, writes a claim to
+        // settings/keyFlowClaims/<visitorId> BEFORE redirecting here with
+        // that same id as the ?v= URL param. Landing here with a valid,
+        // unconsumed claim for the id in the URL is itself the proof
+        // vplink was genuinely visited — there's no client-side timing
+        // guess and nothing that has to somehow survive being forwarded
+        // through vplink's redirect.
         // This design replaced several earlier approaches that each had a
         // real hole:
         //   - securePass === 'true' / source === "official" / referrer
@@ -251,8 +253,16 @@
         //   - "accept any unconsumed claim in the list" — let a second,
         //     unrelated tab (or a genuine bypass attempt) ride along on a
         //     claim it never earned
-        // Reading THIS browser's own visitorId and consuming only that
-        // one claim closes all of the above at once.
+        //   - an earlier version of THIS page read the visitorId from
+        //     localStorage (leftover from a since-removed static gate.html
+        //     that used to set it client-side) instead of the ?v= URL
+        //     param the current worker.js /gate route actually sends —
+        //     that localStorage key was never written by anything, so the
+        //     claim check silently always failed and no key could ever be
+        //     generated. Fixed below: read visitorId from the URL first.
+        // Reading THIS visit's own visitorId (from the URL the /gate
+        // redirect set it in) and consuming only that one claim closes
+        // all of the above at once.
         const CLAIM_MAX_AGE_MS = 10 * 60 * 1000; // generous window for slow shortener redirects
         let isValidAccess = false;
 
@@ -274,7 +284,18 @@
 
         if (!isValidAccess) {
             try {
-                const visitorId = localStorage.getItem('dgxen_visitor_id');
+                // FIX: worker.js's /gate route creates visitorId itself and
+                // sends it back as the ?v= URL param on the redirect to this
+                // page — it never writes anything to this browser's
+                // localStorage (a Cloudflare Worker runs server-side, it
+                // has no access to the browser's storage at all). The old
+                // localStorage.getItem('dgxen_visitor_id') read here was
+                // from the original gate.html design (a static page that
+                // set its own localStorage before redirecting) — that file
+                // no longer exists, so this was always reading a key that
+                // is never set, permanently failing the claim check.
+                const params = new URLSearchParams(window.location.search);
+                const visitorId = params.get('v') || localStorage.getItem('dgxen_visitor_id');
                 if (visitorId) {
                     let consumedThisOne = false;
                     const txResult = await runTransaction(ref(db, 'settings/keyFlowClaims/' + visitorId), (current) => {
@@ -462,7 +483,17 @@
         footerText.addEventListener('touchmove', () => clearTimeout(webTimer));
     }
 
-    window.onload = verifyAndRun;
+    window.onload = function() {
+        // Safety net: if verifyAndRun() throws anything unexpected (a
+        // Firebase/network failure that escapes its own try/catch, etc.),
+        // fall back to the bypass screen instead of leaving every
+        // .screen-container at its default display:none forever — a
+        // silent blank page with no error shown, which is what a
+        // failed/crashed verifyAndRun() used to look like.
+        Promise.resolve(verifyAndRun()).catch(() => {
+            try { switchScreen('bypassContainer'); } catch (e) {}
+        });
+    };
 </script>
 </body>
 </html>
