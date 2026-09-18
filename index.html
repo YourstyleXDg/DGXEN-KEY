@@ -223,26 +223,40 @@
     }
 
     async function verifyAndRun() {
-        const params = new URLSearchParams(window.location.search);
-        const source = params.get('source');
-        const referrer = (document.referrer || "").toLowerCase();
-        
-        const securePass = localStorage.getItem('dgxen_secure_pass');
-
-        const isValidAccess = (
-            securePass === 'true' || 
-            source === "official" ||
-            referrer.includes("earnlinks") ||
-            referrer.includes("vplink") ||
-            referrer.includes("steps.html")
-        );
+        // Single, tamper-resistant signal: a fresh, random, single-use
+        // token that steps.html writes to this same origin's localStorage
+        // right before sending the person to the shortener. This
+        // replaces the old checks:
+        //   - securePass === 'true' — a fixed value anyone could set
+        //     manually in devtools/console, no better than no check
+        //   - source === "official" — a static URL parameter, guessable
+        //     and shareable as a permanent backdoor once discovered
+        //   - referrer.includes(...) — unreliable across browsers and
+        //     redirect methods (many strip/empty the referrer by default
+        //     now), which is what caused genuine first-time visits to
+        //     intermittently and incorrectly hit "Bypass Detected"
+        // A per-visit random token can't be pre-shared as a fixed string,
+        // never appears in any URL, and is consumed (deleted) below the
+        // moment it's used, so it can't be replayed either.
+        const TOKEN_MAX_AGE_MS = 10 * 60 * 1000; // generous window for slow shortener redirects
+        let isValidAccess = false;
+        try {
+            const raw = localStorage.getItem('dgxen_secure_pass');
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (parsed && typeof parsed.token === 'string' && parsed.token.length >= 8 &&
+                    typeof parsed.at === 'number' && (Date.now() - parsed.at) <= TOKEN_MAX_AGE_MS) {
+                    isValidAccess = true;
+                }
+            }
+        } catch (e) { /* malformed value — treat as invalid, not a crash */ }
 
         if (!isValidAccess) {
             switchScreen('bypassContainer');
             return;
         }
 
-        localStorage.removeItem('dgxen_secure_pass');
+        localStorage.removeItem('dgxen_secure_pass'); // consume — single use only
 
         if (window.history.replaceState) {
             const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
