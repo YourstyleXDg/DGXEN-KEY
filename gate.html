@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DGXEN Security System</title>
+<style>
+  body{background:#000;color:#0f0;font-family:monospace;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;text-align:center;}
+</style>
+</head>
+<body>
+<div>Verifying…</div>
+
+<!--
+  This page is the actual proof-of-visit checkpoint for the key-generation
+  flow. It is reachable ONLY by vplink.in's own static redirect (vplink's
+  dashboard only supports one fixed destination URL, no per-request
+  parameters), so simply LANDING here is itself the evidence that vplink
+  was genuinely visited — no client-side timing guess, no token that has
+  to somehow survive the redirect, nothing steps.html has to hope makes
+  it through.
+
+  It writes a claim keyed by this browser's own persistent visitorId
+  (localStorage — shared across every tab of this browser for this
+  origin, including whatever tab vplink opened), then hands off to
+  index.html, which consumes exactly that one claim and no other. See
+  index.html's verifyAndRun() for the consuming side.
+
+  steps.html no longer writes any claim itself — writing it here, at the
+  one point that can only be reached through vplink, is what makes the
+  vplink visit mandatory rather than optional.
+-->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+  const firebaseConfig = { databaseURL: "https://login-pass-1a196-default-rtdb.firebaseio.com/" };
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  (async function() {
+    let visitorId = '';
+    try {
+      visitorId = localStorage.getItem('dgxen_visitor_id') || '';
+      if (!visitorId) {
+        const bytes = new Uint8Array(12);
+        crypto.getRandomValues(bytes);
+        visitorId = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+        localStorage.setItem('dgxen_visitor_id', visitorId);
+      }
+    } catch (e) {
+      visitorId = Date.now().toString(36) + Math.random().toString(36).slice(2);
+    }
+    try {
+      await set(ref(db, 'settings/keyFlowClaims/' + visitorId), Date.now());
+    } catch (e) {
+      // Firebase unreachable — still forward rather than stranding the
+      // person here; index.html's own check will simply find no claim if
+      // this write never landed, same as if this page were skipped.
+    }
+    location.replace('index.html');
+  })();
+</script>
+</body>
+</html>
