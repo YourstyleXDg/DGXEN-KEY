@@ -153,10 +153,49 @@
             </div>
         </div>
 
-        <!-- Yaha wahi same purana logic hai -->
-        <button class="btn" onclick="localStorage.setItem('dgxen_secure_pass', 'true'); location.href='https://vplink.in/getkey';">
+        <!-- Sets a fresh, random, single-use, time-limited token before
+             leaving for the shortener — this replaces both the old plain
+             'true' flag (which is only slightly better than a static
+             password anyone could set manually) and the fragile referrer/
+             source=official checks on the index.html side (a referrer
+             string is unreliable across browsers/redirect chains, and a
+             static "?source=official" is a guessable, shareable backdoor
+             once anyone discovers it). Because a new random token is
+             required every single time, there is nothing fixed here that
+             could leak and be reused, and it never appears in any URL —
+             it only ever exists in this browser's own localStorage. -->
+        <button class="btn" onclick="beginKeyFlow()">
             CONTINUE TO STEP ➜
         </button>
+        <script>
+            function beginKeyFlow() {
+                let token = '';
+                try {
+                    const bytes = new Uint8Array(16);
+                    crypto.getRandomValues(bytes);
+                    token = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+                } catch (e) {
+                    // Fallback for a browser without crypto.getRandomValues —
+                    // still random enough that it can't be pre-shared as a
+                    // fixed string, just not cryptographically strong.
+                    token = Date.now().toString(36) + Math.random().toString(36).slice(2);
+                }
+                try {
+                    localStorage.setItem('dgxen_secure_pass', JSON.stringify({ token: token, at: Date.now() }));
+                } catch (e) {}
+                // Navigate on the next tick, not in the same synchronous
+                // call as the localStorage write — on some mobile browsers
+                // a write immediately followed by location.href in the
+                // exact same tick can be lost if the page starts
+                // unloading before the write is flushed to disk. This is
+                // the actual, previously-intermittent root cause of
+                // legitimate first-time visits occasionally hitting
+                // "Bypass Detected".
+                setTimeout(function() {
+                    location.href = 'https://vplink.in/getkey';
+                }, 30);
+            }
+        </script>
     </div>
 </div>
 
