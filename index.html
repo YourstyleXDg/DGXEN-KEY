@@ -223,25 +223,36 @@
     }
 
     async function verifyAndRun() {
-        // Tamper-resistant signal, read from Firebase rather than
-        // localStorage: steps.html writes settings/keyFlowClaims/lastClaimAt
-        // right before sending the person to the shortener. This replaces
-        // two earlier approaches that both turned out unreliable:
+        // Tamper-resistant signal, read from Firebase rather than trusting
+        // any single browser-storage write in isolation. gate.html — a
+        // small page reachable ONLY via vplink's own static redirect back
+        // to us (vplink's dashboard only supports one fixed destination
+        // URL, no per-request parameters) — writes a claim to
+        // settings/keyFlowClaims/<visitorId> the moment it loads, where
+        // visitorId is a random ID persisted in THIS browser's own
+        // localStorage (shared across every tab of the same browser for
+        // this origin, including whatever tab vplink opened). Landing on
+        // gate.html is itself the proof vplink was genuinely visited —
+        // there's no client-side timing guess and nothing that has to
+        // somehow survive being forwarded through vplink's redirect.
+        // This design replaced several earlier approaches that each had a
+        // real hole:
         //   - securePass === 'true' / source === "official" / referrer
         //     checks — fixed values or unreliable browser signals, easily
         //     guessed/spoofed or simply empty depending on the browser
-        //   - a random token written to localStorage — this seemed
-        //     right in theory (per-visit, never in a URL) but broke in
-        //     real use: vplink opens the final destination in a NEW
-        //     browser tab, and on some devices/browsers that's enough for
-        //     localStorage not to be visible there even on the same
-        //     origin, so genuine first-time visits kept failing
-        // Firebase is read fresh over the network, so it doesn't matter
-        // how many tabs/redirects the shortener uses in between. The
-        // transaction below atomically checks AND consumes the claim in
-        // one step, so a refresh or a copied link immediately after a
-        // genuine pass still correctly fails — there's nothing left to
-        // read a second time.
+        //   - a fresh random token written to localStorage BY steps.html —
+        //     looked right, but nothing then required vplink to actually
+        //     be visited before generating a key
+        //   - claim written by steps.html's button itself — same gap as
+        //     above: tapping the button was enough, vplink was optional
+        //   - a SINGLE SHARED Firebase timestamp — let one visitor's
+        //     refresh invalidate a completely different visitor's
+        //     still-valid claim
+        //   - "accept any unconsumed claim in the list" — let a second,
+        //     unrelated tab (or a genuine bypass attempt) ride along on a
+        //     claim it never earned
+        // Reading THIS browser's own visitorId and consuming only that
+        // one claim closes all of the above at once.
         const CLAIM_MAX_AGE_MS = 10 * 60 * 1000; // generous window for slow shortener redirects
         let isValidAccess = false;
 
@@ -263,16 +274,19 @@
 
         if (!isValidAccess) {
             try {
-                let consumedAValidClaim = false;
-                const txResult = await runTransaction(ref(db, 'settings/keyFlowClaims/lastClaimAt'), (current) => {
-                    consumedAValidClaim = false; // reset each attempt — the callback can run more than once on retry
-                    if (typeof current !== 'number') return current; // nothing claimed — leave untouched
-                    if ((Date.now() - current) > CLAIM_MAX_AGE_MS) return current; // too old — leave untouched, don't consume
-                    consumedAValidClaim = true;
-                    return 0; // sentinel "consumed" value — distinct from both "never claimed" (undefined/null) and any future real timestamp
-                });
-                if (txResult.committed && consumedAValidClaim) {
-                    isValidAccess = true;
+                const visitorId = localStorage.getItem('dgxen_visitor_id');
+                if (visitorId) {
+                    let consumedThisOne = false;
+                    const txResult = await runTransaction(ref(db, 'settings/keyFlowClaims/' + visitorId), (current) => {
+                        consumedThisOne = false; // reset each attempt — callback can retry on conflict
+                        if (typeof current !== 'number') return current; // no claim, or already consumed
+                        if ((Date.now() - current) > CLAIM_MAX_AGE_MS) return current; // too old — leave untouched
+                        consumedThisOne = true;
+                        return null; // consume — this browser's claim only
+                    });
+                    if (txResult.committed && consumedThisOne) {
+                        isValidAccess = true;
+                    }
                 }
             } catch (e) { /* Firebase unreachable — falls through to bypass screen below */ }
         }
