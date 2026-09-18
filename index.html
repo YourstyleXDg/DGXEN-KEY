@@ -4,16 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#030504">
-    <title>Key Generated | DGXEN</title>
+    <title>Get a Free Key | DGXEN</title>
     <style>
         :root {
             --bg: #030504;
             --card-radius: 34px;
-            --text: #ffffff;
+            --text: #fff;
             --muted: #9ca5a0;
             --accent: #00ff88;
-            --accent-soft: rgba(0, 255, 136, 0.18);
-            --error: #ff5252;
+            --warning-bg: rgba(255, 170, 0, 0.1);
+            --warning-border: rgba(255, 170, 0, 0.3);
+            --warning-text: #ffaa00;
         }
         
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -39,461 +40,192 @@
             mix-blend-mode: soft-light; z-index: -1;
         }
 
-        .container { width: 100%; max-width: 400px; text-align: center; perspective: 1000px; }
+        .container { 
+            width: 100%; max-width: 420px; text-align: center; 
+            animation: slideUpFade 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
 
-        .screen-container { display: none; animation: slideUpFade 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-        @keyframes slideUpFade { from { opacity: 0; transform: translateY(30px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes slideUpFade { 
+            from { opacity: 0; transform: translateY(30px) scale(0.98); } 
+            to { opacity: 1; transform: translateY(0) scale(1); } 
+        }
 
+        .key-icon { 
+            width: 75px; height: 75px; border-radius: 50%; display: flex; 
+            justify-content: center; align-items: center; margin: 0 auto 20px; 
+            border: 1px solid rgba(255,255,255,.16); 
+            box-shadow: 0 12px 35px rgba(0,0,0,.35), 0 0 24px rgba(0,255,136,.12); 
+            position: relative; z-index: 10; background: #000; overflow: hidden; 
+        }
+        .key-icon img { width: 100%; height: 100%; object-fit: cover; }
+
+        h1 { font-size: 26px; font-weight: 800; margin-bottom: 8px; letter-spacing: 0.5px; }
+        .subtitle { color: var(--muted); font-size: 13.5px; margin-bottom: 30px; }
+
+        /* Premium Glass Card */
         .glass-card {
             background: linear-gradient(145deg, rgba(255,255,255,.105), rgba(255,255,255,.034) 52%, rgba(255,255,255,.018));
             border: 1px solid rgba(255,255,255,.13);
             border-radius: var(--card-radius);
-            padding: 40px 28px;
+            padding: 40px 30px;
             box-shadow: 0 38px 100px rgba(0,0,0,.72), 0 0 70px rgba(255,255,255,.045), inset 0 1.5px rgba(255,255,255,.28), inset 0 -1px rgba(0,0,0,.45);
             backdrop-filter: blur(30px) saturate(175%) contrast(108%);
             -webkit-backdrop-filter: blur(30px) saturate(175%) contrast(108%);
-            position: relative; overflow: hidden; text-align: center;
+            position: relative; overflow: hidden; text-align: left;
         }
 
-        .glass-card::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1.4px; background: linear-gradient(135deg, rgba(255,105,105,.72), rgba(255,255,255,.78) 17%, transparent 42%, rgba(90,160,255,.55) 75%, rgba(255,255,255,.85)); -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; z-index: 6; }
+        .glass-card::before { 
+            content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1.4px; 
+            background: linear-gradient(135deg, rgba(255,105,105,.72), rgba(255,255,255,.78) 17%, transparent 42%, rgba(90,160,255,.55) 75%, rgba(255,255,255,.85)); 
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); 
+            -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; z-index: 6; 
+        }
         
-        .glass-glare { position: absolute; top: -100%; left: -100%; width: 300%; height: 300%; background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.04) 45%, rgba(255, 255, 255, 0.25) 50%, rgba(255, 255, 255, 0.04) 55%, rgba(255, 255, 255, 0) 100%); transform: rotate(35deg) translateY(-50%); pointer-events: none; z-index: 1; animation: glareSweep 5.5s cubic-bezier(0.35, 0, 0.25, 1) infinite alternate; }
+        /* Internal Glare */
+        .glass-glare { 
+            position: absolute; top: -100%; left: -100%; width: 300%; height: 300%; 
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.04) 45%, rgba(255, 255, 255, 0.25) 50%, rgba(255, 255, 255, 0.04) 55%, rgba(255, 255, 255, 0) 100%); 
+            transform: rotate(35deg) translateY(-50%); pointer-events: none; z-index: 1; 
+            animation: glareSweep 5.5s cubic-bezier(0.35, 0, 0.25, 1) infinite alternate; 
+        }
         @keyframes glareSweep { 0% { transform: rotate(35deg) translateY(-50%); } 100% { transform: rotate(35deg) translateY(50%); } }
 
-        .key-icon { width: 80px; height: 80px; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 24px; border: 1px solid rgba(255,255,255,.16); box-shadow: 0 12px 35px rgba(0,0,0,.35), 0 0 24px rgba(0,255,136,.12); position: relative; z-index: 10; background: #000; overflow: hidden; }
-        .key-icon img { width: 100%; height: 100%; object-fit: cover; }
+        /* Step Indicator */
+        .progress-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; position: relative; z-index: 2; }
+        .step-indicator { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); font-weight: 700; letter-spacing: 0.5px; }
+        .circle { width: 24px; height: 24px; border: 2px solid rgba(255,255,255,0.1); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 11px; font-weight: bold; background: rgba(0,0,0,0.4); }
+        .circle.active { border-color: var(--accent); color: var(--bg); background: var(--accent); box-shadow: 0 0 15px rgba(0,255,136,0.3); }
+        .line { flex-grow: 1; height: 2px; background: rgba(255,255,255,0.08); margin: 0 15px; border-radius: 2px; }
 
-        h2 { 
-            font-size: 24px; 
-            margin: 0 0 10px; 
-            color: var(--accent); 
-            font-weight: 800; 
-            letter-spacing: .3px; 
-            text-shadow: 0 0 22px rgba(0,255,136,.35); 
-            position: relative; 
-            z-index: 2;
-        }
+        h2 { font-size: 22px; margin-bottom: 12px; color: #fff; font-weight: 800; letter-spacing: .3px; position: relative; z-index: 2; display: flex; align-items: center; gap: 8px;}
+        .card-p { color: var(--muted); font-size: 14.5px; line-height: 1.6; margin-bottom: 25px; position: relative; z-index: 2;}
 
-        .card-p { 
-            color: var(--muted); 
-            font-size: 14px; 
-            line-height: 1.5; 
-            margin: 0 0 24px; 
-            position: relative; 
-            z-index: 2;
+        .warning { 
+            background: var(--warning-bg); border: 1px solid var(--warning-border); 
+            border-radius: 16px; padding: 16px; display: flex; gap: 14px; margin-bottom: 25px; 
+            position: relative; z-index: 2; backdrop-filter: blur(10px);
         }
-
-        .name-input, .key-box { 
-            width: 100%; 
-            padding: 20px 14px; 
-            background: rgba(0,0,0,.45); 
-            border: 1px solid rgba(255,255,255,.13); 
-            color: #fff; 
-            border-radius: 20px; 
-            text-align: center; 
-            font-size: 16px; 
-            outline: none; 
-            box-shadow: inset 0 2px 8px rgba(0,0,0,.35); 
-            margin-bottom: 24px; 
-            position: relative; 
-            z-index: 2;
-        }
-        .name-input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft), inset 0 2px 8px rgba(0,0,0,.3); }
-
-        #finalKey { 
-            color: var(--accent); 
-            font-family: monospace; 
-            font-size: 18px; 
-            font-weight: 800; 
-            letter-spacing: 1.5px; 
-            text-shadow: 0 0 12px rgba(0,255,136,.4); 
-            display: block;
-            word-break: break-all;
-        }
+        .warning-icon { color: var(--warning-text); font-size: 20px; }
+        .warning-title { color: var(--warning-text); font-weight: 800; font-size: 14px; margin-bottom: 4px; letter-spacing: 0.3px;}
+        .warning-text { color: rgba(255,255,255,0.7); font-size: 12.5px; line-height: 1.5; }
 
         .btn { 
-            width: 100%; 
-            padding: 18px; 
-            border: 0; 
-            border-radius: 18px; 
-            background: linear-gradient(135deg,#fff,#dfe5e1); 
-            color: #020302; 
-            font-size: 15px; 
-            font-weight: 900; 
-            letter-spacing: .4px; 
-            cursor: pointer; 
+            width: 100%; padding: 18px; border: 0; border-radius: 16px; 
+            background: linear-gradient(135deg,#fff,#dfe5e1); color: #020302; 
+            font-size: 15px; font-weight: 900; letter-spacing: .35px; cursor: pointer; 
             box-shadow: 0 10px 28px rgba(0,0,0,.38), inset 0 1px #fff; 
             transition: transform .15s, box-shadow .25s, background .25s; 
-            position: relative; 
-            z-index: 2;
+            position: relative; z-index: 2; display: flex; justify-content: center; align-items: center; gap: 8px;
         }
-        .btn:active { transform: scale(0.975); }
-        .btn-success { background: linear-gradient(135deg,#60ffb5,#00cf73); box-shadow: 0 10px 30px rgba(0,255,136,.32); }
-        
-        .btn-red { background: linear-gradient(135deg, #ff6b6b, #e60000); color: white; box-shadow: 0 10px 30px rgba(255, 68, 68, 0.3); border: none; }
-        .btn-red:active { transform: scale(0.975); }
-
-        .error-card { border-color: rgba(255, 82, 82, 0.4); background: linear-gradient(145deg, rgba(255,0,0,.05), rgba(255,255,255,.02)); box-shadow: 0 38px 100px rgba(0,0,0,.72), inset 0 1.5px rgba(255,82,82,.2); }
-        .error-icon { font-size: 55px; margin: 0 auto 16px; filter: drop-shadow(0 0 15px rgba(255,82,82,0.5)); position: relative; z-index: 2; }
-        .error-title { color: var(--error); font-size: 24px; font-weight: 800; margin-bottom: 12px; text-shadow: 0 0 20px rgba(255,82,82,.4); position: relative; z-index: 2; }
-
-        .contact-admin { display: inline-flex; align-items: center; justify-content: center; margin-top: 15px; padding: 12px 24px; border-radius: 999px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); color: var(--muted); font-size: 13px; font-weight: 700; text-decoration: none; transition: 0.3s; position: relative; z-index: 2; }
-        .contact-admin:hover { background: rgba(255, 255, 255, 0.12); color: #fff; border-color: rgba(255, 255, 255, 0.25); transform: scale(1.04); }
-
-        .footer { margin-top: 40px; color: rgba(255,255,255,0.22); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; font-weight: 800; }
+        .btn:hover { background: var(--accent); box-shadow: 0 10px 30px rgba(0,255,136,.32); transform: translateY(-2px); }
+        .btn:active { transform: translateY(0) scale(0.975); }
     </style>
 </head>
 <body>
 
 <div class="container">
-    
-    <!-- NAME REGISTRATION PROMPT -->
-    <div id="namePrompt" class="screen-container">
-        <div class="glass-card">
-            <div class="glass-glare"></div>
-            <div class="key-icon"><img src="./assets/logo.png" alt="DGXEN" onerror="this.style.display='none'"></div>
-            <h2>Welcome to DGXEN</h2>
-            <p class="card-p">Please enter your name to register your device on our secure network.</p>
-            <input type="text" id="userNameInput" class="name-input" placeholder="Enter your name..." autocomplete="off">
-            <button class="btn" id="saveNameBtn">REGISTER DEVICE</button>
-            <p id="regStatus" style="color: var(--error); font-size: 13px; font-weight: 600; margin-top: 15px; height: 15px; position: relative; z-index: 2;"></p>
+    <div class="key-icon">
+        <img src="./assets/logo.png" alt="DGXEN" onerror="this.style.display='none'">
+    </div>
+    <h1>Get a Free Key</h1>
+    <p class="subtitle">Complete the step below to receive your access key.</p>
+
+    <div class="progress-container">
+        <div class="step-indicator">
+            <div class="circle active">1</div>
+            <span style="color: #fff;">Step 1 of 1</span>
         </div>
+        <div class="line"></div>
+        <div class="circle" style="color: rgba(255,255,255,0.3);">✓</div>
     </div>
 
-    <!-- MAIN KEY GENERATOR -->
-    <div id="mainContainer" class="screen-container">
-        <div class="glass-card">
-            <div class="glass-glare"></div>
-            <div class="key-icon"><img src="./assets/logo.png" alt="DGXEN" onerror="this.style.display='none'"></div>
-            <h2>Generation Success!</h2>
-            <p class="card-p">One key - One login</p>
-            <div class="key-box">
-                <span id="finalKey">SECURE FETCHING...</span>
+    <div class="glass-card">
+        <div class="glass-glare"></div>
+        
+        <h2>Unlock Access</h2>
+        <p class="card-p">To continue, click the button below to complete the first step. You will be automatically redirected to your key once finished.</p>
+
+        <div class="warning">
+            <div class="warning-icon">⚠️</div>
+            <div>
+                <div class="warning-title">Security Notice</div>
+                <div class="warning-text">The use of bots or any kind of link automation will result in a permanent ban.</div>
             </div>
-            <button class="btn" id="copyBtn">COPY TO CLIPBOARD</button>
         </div>
-    </div>
 
-    <!-- DEVICE BANNED SCREEN -->
-    <div id="bannedContainer" class="screen-container">
-        <div class="glass-card error-card">
-            <div class="glass-glare"></div>
-            <div class="error-icon">💀</div>
-            <div class="error-title">Device Banned</div>
-            <p class="card-p" id="banReasonText" style="color: #d1d1d1; line-height: 1.6;">Your device has been permanently blacklisted from the DGXEN network. You can no longer generate access keys.</p>
-            <a href="https://t.me/DGXEN" target="_blank" class="contact-admin">Contact Support</a>
-        </div>
+        <!-- The real proof-of-visit checkpoint is gate.html now (only
+             reachable via vplink's own redirect back to us), not this
+             button. Writing a claim here, at tap-time, would mean vplink
+             never actually has to be visited at all — someone could tap
+             this and immediately open index.html in a new tab, skipping
+             vplink entirely. This button now does nothing more than send
+             the person to vplink; see gate.html for where the claim is
+             actually created, and index.html's verifyAndRun() for where
+             it's consumed. -->
+        <button class="btn" id="continueBtn" onclick="goToVplink()">
+            CONTINUE TO STEP ➜
+        </button>
+        <p id="vplinkRetryNote" style="display:none; margin: 12px 0 0; font-size: 12px; color: var(--muted); text-align: center;"></p>
     </div>
-
-    <!-- BYPASS SCREEN -->
-    <div id="bypassContainer" class="screen-container">
-        <div class="glass-card error-card">
-            <div class="glass-glare"></div>
-            <div class="error-icon">🚫</div>
-            <div class="error-title">Bypass Detected!</div>
-            <p class="card-p" style="color: #d1d1d1;">Direct access is prohibited. Please use the official App link to generate your key.</p>
-            <button class="btn btn-red" id="returnBtn" style="margin-top: 10px;">RETURN TO STEPS</button>
-        </div>
-    </div>
-
-    <div class="footer">DGXEN SECURITY SYSTEM</div>
 </div>
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, get, set, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+<script>
+    // vplink.in occasionally takes a long time to respond to a cold
+    // request (seen as the browser's own "This site can't be reached /
+    // ERR_CONNECTION_TIMED_OUT" page) — a plain location.href navigation
+    // has no way to recover from that; the person lands on a dead browser
+    // error page and has to realize themselves that going back and
+    // tapping the button again is what fixes it. This does that retry
+    // automatically instead: before actually navigating, it pings vplink
+    // with a short-timeout fetch (no-cors, so it works even though we
+    // can't read the response — a settled fetch either way just proves
+    // the connection didn't hang) and retries a couple of times on
+    // failure, falling back to a normal navigation attempt either way so
+    // a person is never stuck with no working button.
+    const VPLINK_URL = 'https://vplink.in/getkey';
+    const VPLINK_PING_URL = 'https://vplink.in/';
+    const MAX_ATTEMPTS = 3;
+    const PING_TIMEOUT_MS = 4000;
 
-    const firebaseConfig = {
-        databaseURL: "https://login-pass-1a196-default-rtdb.firebaseio.com/"
-    };
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    function switchScreen(screenId) {
-        const screens = ['namePrompt', 'mainContainer', 'bannedContainer', 'bypassContainer'];
-        screens.forEach(id => { document.getElementById(id).style.display = 'none'; });
-        document.getElementById(screenId).style.display = 'block';
-    }
-
-    function generateUUID() {
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
+    function pingVplink() {
+        return new Promise((resolve) => {
+            const controller = new AbortController();
+            const timer = setTimeout(() => { controller.abort(); }, PING_TIMEOUT_MS);
+            fetch(VPLINK_PING_URL, { mode: 'no-cors', cache: 'no-store', signal: controller.signal })
+                .then(() => { clearTimeout(timer); resolve(true); })
+                .catch(() => { clearTimeout(timer); resolve(false); });
         });
     }
 
-    async function verifyAndRun() {
-        // Tamper-resistant signal, read from Firebase rather than trusting
-        // any single browser-storage write in isolation. worker.js's
-        // /gate route — reachable ONLY via vplink's own static redirect
-        // back to us (vplink's dashboard only supports one fixed
-        // destination URL, no per-request parameters) — checks the
-        // request's Referer header server-side (a copy-pasted link opened
-        // directly never carries one; a genuine click-through from vplink
-        // does) and, if it passes, writes a claim to
-        // settings/keyFlowClaims/<visitorId> BEFORE redirecting here with
-        // that same id as the ?v= URL param. Landing here with a valid,
-        // unconsumed claim for the id in the URL is itself the proof
-        // vplink was genuinely visited — there's no client-side timing
-        // guess and nothing that has to somehow survive being forwarded
-        // through vplink's redirect.
-        // This design replaced several earlier approaches that each had a
-        // real hole:
-        //   - securePass === 'true' / source === "official" / referrer
-        //     checks — fixed values or unreliable browser signals, easily
-        //     guessed/spoofed or simply empty depending on the browser
-        //   - a fresh random token written to localStorage BY steps.html —
-        //     looked right, but nothing then required vplink to actually
-        //     be visited before generating a key
-        //   - claim written by steps.html's button itself — same gap as
-        //     above: tapping the button was enough, vplink was optional
-        //   - a SINGLE SHARED Firebase timestamp — let one visitor's
-        //     refresh invalidate a completely different visitor's
-        //     still-valid claim
-        //   - "accept any unconsumed claim in the list" — let a second,
-        //     unrelated tab (or a genuine bypass attempt) ride along on a
-        //     claim it never earned
-        //   - an earlier version of THIS page read the visitorId from
-        //     localStorage (leftover from a since-removed static gate.html
-        //     that used to set it client-side) instead of the ?v= URL
-        //     param the current worker.js /gate route actually sends —
-        //     that localStorage key was never written by anything, so the
-        //     claim check silently always failed and no key could ever be
-        //     generated. Fixed below: read visitorId from the URL first.
-        // Reading THIS visit's own visitorId (from the URL the /gate
-        // redirect set it in) and consuming only that one claim closes
-        // all of the above at once.
-        const CLAIM_MAX_AGE_MS = 10 * 60 * 1000; // generous window for slow shortener redirects
-        let isValidAccess = false;
+    async function goToVplink() {
+        const btn = document.getElementById('continueBtn');
+        const note = document.getElementById('vplinkRetryNote');
+        btn.disabled = true;
+        btn.style.opacity = '0.75';
+        btn.style.cursor = 'default';
 
-        // Developer/testing override: ?dev=<value>, checked against
-        // settings/devBypassSecret in Firebase — never a value hardcoded
-        // in this file, so reading the source teaches nothing. Rotate it
-        // anytime from the admin panel if it ever leaks; no redeploy
-        // needed. Only takes effect if a devBypassSecret is actually set.
-        try {
-            const params = new URLSearchParams(window.location.search);
-            const devParam = params.get('dev');
-            if (devParam) {
-                const secretSnap = await get(ref(db, 'settings/devBypassSecret'));
-                if (secretSnap.exists() && String(secretSnap.val()) === devParam) {
-                    isValidAccess = true;
-                }
+        for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+            btn.innerText = attempt === 1 ? 'CONNECTING…' : `RETRYING… (${attempt}/${MAX_ATTEMPTS})`;
+            if (note) {
+                note.style.display = attempt > 1 ? 'block' : 'none';
+                note.innerText = attempt > 1 ? 'vplink.in is slow to respond — retrying automatically…' : '';
             }
-        } catch (e) { /* Firebase unreachable — fall through to the normal check */ }
 
-        if (!isValidAccess) {
-            try {
-                // FIX: worker.js's /gate route creates visitorId itself and
-                // sends it back as the ?v= URL param on the redirect to this
-                // page — it never writes anything to this browser's
-                // localStorage (a Cloudflare Worker runs server-side, it
-                // has no access to the browser's storage at all). The old
-                // localStorage.getItem('dgxen_visitor_id') read here was
-                // from the original gate.html design (a static page that
-                // set its own localStorage before redirecting) — that file
-                // no longer exists, so this was always reading a key that
-                // is never set, permanently failing the claim check.
-                const params = new URLSearchParams(window.location.search);
-                const visitorId = params.get('v') || localStorage.getItem('dgxen_visitor_id');
-                if (visitorId) {
-                    let consumedThisOne = false;
-                    const txResult = await runTransaction(ref(db, 'settings/keyFlowClaims/' + visitorId), (current) => {
-                        consumedThisOne = false; // reset each attempt — callback can retry on conflict
-                        if (typeof current !== 'number') return current; // no claim, or already consumed
-                        if ((Date.now() - current) > CLAIM_MAX_AGE_MS) return current; // too old — leave untouched
-                        consumedThisOne = true;
-                        return null; // consume — this browser's claim only
-                    });
-                    if (txResult.committed && consumedThisOne) {
-                        isValidAccess = true;
-                    }
-                }
-            } catch (e) { /* Firebase unreachable — falls through to bypass screen below */ }
-        }
-
-        if (!isValidAccess) {
-            switchScreen('bypassContainer');
-            return;
-        }
-
-        if (window.history.replaceState) {
-            const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
-            window.history.replaceState({}, document.title, cleanUrl);
-        }
-
-        let deviceId = localStorage.getItem('dgxen_device_id');
-
-        if (!deviceId) {
-            switchScreen('namePrompt');
-
-            document.getElementById('saveNameBtn').onclick = async () => {
-                const name = document.getElementById('userNameInput').value.trim();
-                if (name.length < 2) {
-                    document.getElementById('regStatus').innerText = "Enter a valid name (min 2 letters)";
-                    return;
-                }
-
-                document.getElementById('regStatus').style.color = "var(--accent)";
-                document.getElementById('regStatus').innerText = "Registering device...";
-                document.getElementById('saveNameBtn').disabled = true;
-
-                deviceId = generateUUID();
-                localStorage.setItem('dgxen_device_id', deviceId);
-
-                try {
-                    await set(ref(db, 'users/' + deviceId), {
-                        name: name,
-                        status: 'active',
-                        joined: new Date().toISOString()
-                    });
-                } catch (e) {
-                    console.error("Firebase write error:", e);
-                }
-
-                proceedToKey();
-            };
-        } else {
-            try {
-                const userRef = ref(db, 'users/' + deviceId);
-                const snapshot = await get(userRef);
-                
-                if (!snapshot.exists()) {
-                    localStorage.removeItem('dgxen_device_id');
-                    location.reload();
-                    return;
-                }
-
-                if (snapshot.val().status === 'banned') {
-                    let dbReason = snapshot.val().banReason || "";
-                    if (dbReason.toLowerCase().includes("generate a new key") || dbReason === "") {
-                        document.getElementById('banReasonText').innerText = "Your device has been permanently blacklisted from the DGXEN network. You can no longer generate access keys.";
-                    } else {
-                        document.getElementById('banReasonText').innerText = "Reason: " + dbReason;
-                    }
-                    switchScreen('bannedContainer');
-                    return;
-                }
-            } catch (e) {
-                console.error("Firebase read error:", e);
+            const ok = await pingVplink();
+            if (ok || attempt === MAX_ATTEMPTS) {
+                // Either it's reachable, or we've retried enough — go for
+                // real navigation either way rather than stalling forever
+                // (a false-negative ping should never trap the person).
+                location.href = VPLINK_URL;
+                return;
             }
-            proceedToKey();
+            // Small pause before the next attempt so we're not hammering
+            // a server that's already slow to respond.
+            await new Promise((r) => setTimeout(r, 900));
         }
     }
-
-    function proceedToKey() {
-        switchScreen('mainContainer');
-        generateLockedKey();
-    }
-
-    async function generateLockedKey() {
-        try {
-            document.getElementById('finalKey').innerText = "GENERATING...";
-
-            const deviceId = localStorage.getItem('dgxen_device_id');
-            if(!deviceId) { location.reload(); return; }
-
-            import('https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js').then(async (module) => {
-                const { ref, get, update } = module;
-
-                const settingsSnap = await get(ref(db, 'settings/keyExpiryHours'));
-                const expiryHours = settingsSnap.exists() ? settingsSnap.val() : 24;
-
-                const userRef = ref(db, 'users/' + deviceId);
-                const userSnap = await get(userRef);
-                
-                if (userSnap.exists()) {
-                    const userData = userSnap.val();
-                    const now = Date.now();
-
-                    if (userData.lastGeneratedKey && userData.keyExpiresAt && now < userData.keyExpiresAt) {
-                        displayKeyInfo(userData.lastGeneratedKey, userData.keyExpiresAt, expiryHours);
-                        return;
-                    }
-                    
-                    const newKey = "DGXEN-" + 
-                        Math.random().toString(36).substring(2,6).toUpperCase() + "-" + 
-                        Math.random().toString(36).substring(2,6).toUpperCase() + "-" + 
-                        Math.random().toString(36).substring(2,6).toUpperCase() + "-" + 
-                        Math.random().toString(36).substring(2,6).toUpperCase();
-                    
-                    const expiresAt = now + (expiryHours * 60 * 60 * 1000);
-                    
-                    await update(userRef, { lastGeneratedKey: newKey, keyExpiresAt: expiresAt });
-                    displayKeyInfo(newKey, expiresAt, expiryHours);
-                } else {
-                    localStorage.removeItem('dgxen_device_id');
-                    location.reload();
-                }
-            }).catch(err => {
-                document.getElementById('finalKey').innerText = "DB CONNECTION ERROR";
-            });
-
-        } catch (err) {
-            document.getElementById('finalKey').innerText = "ERROR FETCHING KEY";
-        }
-    }
-
-    function displayKeyInfo(key, expiresAt, hours) {
-        document.getElementById('finalKey').innerText = key;
-        const expiryDate = new Date(expiresAt);
-        const timeString = expiryDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        
-        let expiryText = document.getElementById('expiryTextInfo');
-        if(!expiryText) {
-            expiryText = document.createElement('p');
-            expiryText.id = 'expiryTextInfo';
-            expiryText.style = "color: #ffae00; font-size: 13px; font-weight: bold; margin: 12px 0 0; letter-spacing: 0.5px; position: relative; z-index: 2;";
-            const keyElement = document.getElementById('finalKey');
-            if(keyElement && keyElement.parentElement) keyElement.parentElement.appendChild(expiryText);
-        }
-        expiryText.innerHTML = `⏳ Valid for ${hours} Hours (Expires at ${timeString})`;
-    }
-
-    document.getElementById('copyBtn').addEventListener('click', () => {
-        const keyText = document.getElementById('finalKey').innerText;
-        if(keyText.includes("SECURE") || keyText.includes("ERROR") || keyText.includes("GENERATING")) return;
-
-        navigator.clipboard.writeText(keyText).then(() => {
-            const btn = document.getElementById('copyBtn');
-            btn.innerText = "COPIED SUCCESSFULLY! ✅";
-            btn.classList.add('btn-success');
-            setTimeout(() => { 
-                btn.innerText = "COPY TO CLIPBOARD"; 
-                btn.classList.remove('btn-success');
-            }, 2000);
-        });
-    });
-
-    document.getElementById('returnBtn').addEventListener('click', () => { location.href = 'steps.html'; });
-
-    const footerText = document.querySelector('.footer');
-    if(footerText) {
-        let webTimer;
-        footerText.addEventListener('touchstart', (e) => {
-            webTimer = setTimeout(() => {
-                const realId = localStorage.getItem('dgxen_device_id');
-                if(realId) {
-                    navigator.clipboard.writeText(realId).then(() => { alert("Real Device ID Copied for Admin:\n" + realId); });
-                } else { alert("No Device ID found."); }
-                e.preventDefault();
-            }, 1200);
-        });
-        footerText.addEventListener('touchend', () => clearTimeout(webTimer));
-        footerText.addEventListener('touchmove', () => clearTimeout(webTimer));
-    }
-
-    window.onload = function() {
-        // Safety net: if verifyAndRun() throws anything unexpected (a
-        // Firebase/network failure that escapes its own try/catch, etc.),
-        // fall back to the bypass screen instead of leaving every
-        // .screen-container at its default display:none forever — a
-        // silent blank page with no error shown, which is what a
-        // failed/crashed verifyAndRun() used to look like.
-        Promise.resolve(verifyAndRun()).catch(() => {
-            try { switchScreen('bypassContainer'); } catch (e) {}
-        });
-    };
 </script>
+
 </body>
 </html>
+
