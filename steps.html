@@ -153,48 +153,39 @@
             </div>
         </div>
 
-        <!-- Sets a fresh, random, single-use, time-limited token before
-             leaving for the shortener — this replaces both the old plain
-             'true' flag (which is only slightly better than a static
-             password anyone could set manually) and the fragile referrer/
-             source=official checks on the index.html side (a referrer
-             string is unreliable across browsers/redirect chains, and a
-             static "?source=official" is a guessable, shareable backdoor
-             once anyone discovers it). Because a new random token is
-             required every single time, there is nothing fixed here that
-             could leak and be reused, and it never appears in any URL —
-             it only ever exists in this browser's own localStorage. -->
+        <!-- Writes a "someone just started the real flow" claim straight
+             to Firebase — not localStorage — before leaving for the
+             shortener. This replaces the localStorage-token approach,
+             which turned out not to survive vplink's redirect chain in
+             practice (the shortener opens the final destination in a NEW
+             browser tab, which on some devices/browsers is enough for
+             localStorage not to be visible there even on the same
+             origin). Firebase is the one thing guaranteed to be visible
+             regardless of what the shortener does in between, since
+             index.html reads it fresh over the network rather than from
+             local browser storage. -->
         <button class="btn" onclick="beginKeyFlow()">
             CONTINUE TO STEP ➜
         </button>
-        <script>
-            function beginKeyFlow() {
-                let token = '';
+        <script type="module">
+            import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+            import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+            const firebaseConfig = { databaseURL: "https://login-pass-1a196-default-rtdb.firebaseio.com/" };
+            const app = initializeApp(firebaseConfig);
+            const db = getDatabase(app);
+
+            window.beginKeyFlow = async function() {
                 try {
-                    const bytes = new Uint8Array(16);
-                    crypto.getRandomValues(bytes);
-                    token = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+                    await set(ref(db, 'settings/keyFlowClaims/lastClaimAt'), Date.now());
                 } catch (e) {
-                    // Fallback for a browser without crypto.getRandomValues —
-                    // still random enough that it can't be pre-shared as a
-                    // fixed string, just not cryptographically strong.
-                    token = Date.now().toString(36) + Math.random().toString(36).slice(2);
+                    // Firebase unreachable — still let the person continue
+                    // rather than stranding them; index.html's own check
+                    // will simply not find a recent claim if this write
+                    // never landed, same as if they'd skipped this step.
                 }
-                try {
-                    localStorage.setItem('dgxen_secure_pass', JSON.stringify({ token: token, at: Date.now() }));
-                } catch (e) {}
-                // Navigate on the next tick, not in the same synchronous
-                // call as the localStorage write — on some mobile browsers
-                // a write immediately followed by location.href in the
-                // exact same tick can be lost if the page starts
-                // unloading before the write is flushed to disk. This is
-                // the actual, previously-intermittent root cause of
-                // legitimate first-time visits occasionally hitting
-                // "Bypass Detected".
-                setTimeout(function() {
-                    location.href = 'https://vplink.in/getkey';
-                }, 30);
-            }
+                location.href = 'https://vplink.in/getkey';
+            };
         </script>
     </div>
 </div>
