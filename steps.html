@@ -153,42 +153,21 @@
             </div>
         </div>
 
-        <!-- Writes a "someone just started the real flow" claim straight
-             to Firebase — not localStorage — before leaving for the
-             shortener. This replaces the localStorage-token approach,
-             which turned out not to survive vplink's redirect chain in
-             practice (the shortener opens the final destination in a NEW
-             browser tab, which on some devices/browsers is enough for
-             localStorage not to be visible there even on the same
-             origin). Firebase is the one thing guaranteed to be visible
-             regardless of what the shortener does in between, since
-             index.html reads it fresh over the network rather than from
-             local browser storage. -->
-        <button class="btn" onclick="beginKeyFlow()">
+        <!-- The real proof-of-visit checkpoint is gate.html now (only
+             reachable via vplink's own redirect back to us), not this
+             button. Writing a claim here, at tap-time, would mean vplink
+             never actually has to be visited at all — someone could tap
+             this and immediately open index.html in a new tab, skipping
+             vplink entirely. This button now does nothing more than send
+             the person to vplink; see gate.html for where the claim is
+             actually created, and index.html's verifyAndRun() for where
+             it's consumed. -->
+        <button class="btn" onclick="location.href='https://vplink.in/getkey'">
             CONTINUE TO STEP ➜
         </button>
-        <script type="module">
-            import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-            import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-            const firebaseConfig = { databaseURL: "https://login-pass-1a196-default-rtdb.firebaseio.com/" };
-            const app = initializeApp(firebaseConfig);
-            const db = getDatabase(app);
-
-            window.beginKeyFlow = async function() {
-                try {
-                    await set(ref(db, 'settings/keyFlowClaims/lastClaimAt'), Date.now());
-                } catch (e) {
-                    // Firebase unreachable — still let the person continue
-                    // rather than stranding them; index.html's own check
-                    // will simply not find a recent claim if this write
-                    // never landed, same as if they'd skipped this step.
-                }
-                location.href = 'https://vplink.in/getkey';
-            };
-        </script>
     </div>
 </div>
 
 </body>
 </html>
+
