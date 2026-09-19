@@ -284,6 +284,16 @@
         // in this file, so reading the source teaches nothing. Rotate it
         // anytime from the admin panel if it ever leaks; no redeploy
         // needed. Only takes effect if a devBypassSecret is actually set.
+        //
+        // SINGLE-USE: the secret is deleted from Firebase immediately
+        // after a successful match, in the same spirit as the normal
+        // flow's token burn — otherwise this would be exactly the
+        // copy-paste/refresh bypass the rest of this function exists to
+        // close, just under a different name. A copied dev link (e.g.
+        // long-pressed and copied off the "Get Link" button while a dev
+        // session was active) stops working the moment it's used once;
+        // generating a new dev link requires setting a fresh
+        // devBypassSecret from the admin panel again.
         try {
             const params = new URLSearchParams(window.location.search);
             const devParam = params.get('dev');
@@ -291,6 +301,7 @@
                 const secretSnap = await get(ref(db, 'settings/devBypassSecret'));
                 if (secretSnap.exists() && String(secretSnap.val()) === devParam) {
                     isValidAccess = true;
+                    try { await set(ref(db, 'settings/devBypassSecret'), null); } catch (e) { /* best-effort burn */ }
                 }
             }
         } catch (e) { /* Firebase unreachable — fall through to the normal check */ }
