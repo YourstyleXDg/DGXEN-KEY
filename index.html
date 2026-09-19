@@ -294,14 +294,47 @@
         // session was active) stops working the moment it's used once;
         // generating a new dev link requires setting a fresh
         // devBypassSecret from the admin panel again.
+        //
+        // TIME-LIMITED TOO, on top of single-use: the burn-on-use above
+        // only protects against reuse *after* a successful delete actually
+        // lands. It does nothing for a secret that was set once and then
+        // forgotten about (never rotated, never manually cleared) — that
+        // stays live and reusable indefinitely, which is a real gap: a
+        // stale value sitting in Firebase, or a delete that silently fails,
+        // has no other guard. This adds an automatic ceiling that doesn't
+        // depend on remembering to clean up: the first time any client
+        // observes a given secret value, it records that moment in
+        // settings/devBypassSecretMeta; the same value is only ever
+        // accepted within DEV_BYPASS_MAX_AGE_MS of that first sighting,
+        // however many devices or tabs try it. No admin-panel change is
+        // needed for this — it's tracked entirely from here.
+        const DEV_BYPASS_MAX_AGE_MS = 10 * 60 * 1000; // 10 minutes
         try {
             const params = new URLSearchParams(window.location.search);
             const devParam = params.get('dev');
             if (devParam) {
                 const secretSnap = await get(ref(db, 'settings/devBypassSecret'));
                 if (secretSnap.exists() && String(secretSnap.val()) === devParam) {
-                    isValidAccess = true;
+                    const metaRef = ref(db, 'settings/devBypassSecretMeta');
+                    const metaSnap = await get(metaRef);
+                    const meta = metaSnap.exists() ? metaSnap.val() : null;
+                    let firstSeenAt;
+                    if (meta && meta.secret === devParam && meta.firstSeenAt) {
+                        firstSeenAt = meta.firstSeenAt;
+                    } else {
+                        // First time this exact value has been checked — start its clock now.
+                        firstSeenAt = Date.now();
+                        try { await set(metaRef, { secret: devParam, firstSeenAt: firstSeenAt }); } catch (e) {}
+                    }
+                    const age = Date.now() - firstSeenAt;
+                    if (age <= DEV_BYPASS_MAX_AGE_MS) {
+                        isValidAccess = true;
+                    }
+                    // Burn the secret regardless of whether it was still within
+                    // the age window — either way this exact attempt consumes
+                    // it, so it can never be checked again either way.
                     try { await set(ref(db, 'settings/devBypassSecret'), null); } catch (e) { /* best-effort burn */ }
+                    try { await set(metaRef, null); } catch (e) { /* best-effort cleanup */ }
                 }
             }
         } catch (e) { /* Firebase unreachable — fall through to the normal check */ }
