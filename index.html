@@ -154,7 +154,7 @@
      itself ever starts. Removed once the window 'load' event fires, or
      after a hard 8s cap so it can never get stuck. -->
 <div id="bootOverlay" aria-hidden="true">
-  <div id="bootChip"><span>Initializing keygen</span></div>
+  <div id="bootChip"><span id="bootChipText">Initializing keygen</span></div>
 </div>
 <style>
   #bootOverlay{
@@ -212,12 +212,31 @@
       el.classList.add('hide');
       setTimeout(function(){ if (el && el.parentNode) el.parentNode.removeChild(el); }, 600);
     }
-    if (document.readyState === 'complete') {
-      hideBootOverlay();
-    } else {
-      window.addEventListener('load', hideBootOverlay);
-    }
-    setTimeout(hideBootOverlay, 8000);
+    // Exposed globally so displayKeyInfo() can hide it exactly when the
+    // key is actually ready, instead of at the page's own 'load' event
+    // (which fires well before the real Firebase work finishes and left
+    // a black gap after the animation had already disappeared).
+    window.hideBootOverlay = hideBootOverlay;
+    // Cycles the chip's text through a short reassuring sequence for as
+    // long as the overlay is up — real generation typically takes 4-5s,
+    // long enough that a single static line starts to feel stuck.
+    var bootPhrases = ['Initializing keygen', 'Verifying device', 'Almost there…'];
+    var bootPhraseIdx = 0;
+    var bootPhraseTimer = setInterval(function(){
+      bootPhraseIdx = (bootPhraseIdx + 1) % bootPhrases.length;
+      var el = document.getElementById('bootChipText');
+      if (el) el.textContent = bootPhrases[bootPhraseIdx];
+      else clearInterval(bootPhraseTimer);
+    }, 1600);
+    var _hideBootOverlayOrig = hideBootOverlay;
+    hideBootOverlay = function(){
+      clearInterval(bootPhraseTimer);
+      _hideBootOverlayOrig();
+    };
+    window.hideBootOverlay = hideBootOverlay;
+    // Hard cap — never let this sit forever if key generation somehow
+    // never completes or errors out silently.
+    setTimeout(hideBootOverlay, 12000);
   })();
 </script>
 
@@ -295,6 +314,14 @@
         const screens = ['namePrompt', 'mainContainer', 'bannedContainer', 'bypassContainer'];
         screens.forEach(id => { document.getElementById(id).style.display = 'none'; });
         document.getElementById(screenId).style.display = 'block';
+        // Nothing to wait for once we've landed on a screen that isn't
+        // actively generating a key (name prompt, banned, bypass) — hide
+        // the boot overlay right away rather than leaving it up until the
+        // key-generation completion hook or the hard cap. mainContainer
+        // is deliberately excluded: that's the key-generation screen, and
+        // hiding happens from displayKeyInfo() once the key is truly
+        // ready, not just once this screen becomes visible.
+        if (screenId !== 'mainContainer' && window.hideBootOverlay) window.hideBootOverlay();
     }
 
     function generateUUID() {
@@ -605,31 +632,37 @@
                     await update(userRef, { lastGeneratedKey: newKey, keyExpiresAt: expiresAt, keyGeneratedAt: now });
                     displayKeyInfo(newKey, expiresAt, expiryHours);
 
-                    // Always log a generation event here — this is the one
-                    // point every key generation passes through regardless
-                    // of whether it's ever later shared/used elsewhere, so
-                    // it's the only reliable place to flag fast generation
-                    // for every case ("any method, legitimate or fake").
-                    // login.html's own share-log write (when a DIFFERENT
-                    // device later uses this key) is a separate, later
-                    // event and doesn't fire for a generator's own first
-                    // login, so it can't cover this by itself.
+                    // Only ever write a log entry here when generation is
+                    // flagged as suspiciously fast — a normal generation
+                    // creates no log at all now, matching the requirement
+                    // that Share/User Logs shows exactly two things: share/
+                    // re-use attempts (written separately, in login.html)
+                    // and fast-generation flags (written here). This is
+                    // still the one point every key generation passes
+                    // through regardless of whether it's ever later
+                    // shared/used, so it's the only reliable place to
+                    // catch fast generation for every case ("any method,
+                    // legitimate or fake") — login.html's own share-log
+                    // write only fires when a DIFFERENT device later uses
+                    // this key, never for a generator's own first login.
                     try {
                         const { set: fbSet } = module;
                         const nameSetAt = userData.nameSetAt;
                         const fastGeneration = !!(nameSetAt && (now - Number(nameSetAt)) < 60000 && now >= Number(nameSetAt));
-                        const genLogKey = deviceId.replace(/[.#$\[\]\/]/g, '_') + '_' + now;
-                        await fbSet(ref(db, 'settings/shareLogs/' + genLogKey), {
-                            generatorName: userData.name || 'Unknown Generator',
-                            generatorId: deviceId,
-                            key: newKey,
-                            receiverName: null,
-                            receiverDevice: null,
-                            receiverFingerprint: null,
-                            timestamp: now,
-                            type: 'generation',
-                            fastGeneration: fastGeneration
-                        });
+                        if (fastGeneration) {
+                            const genLogKey = deviceId.replace(/[.#$\[\]\/]/g, '_') + '_' + now;
+                            await fbSet(ref(db, 'settings/shareLogs/' + genLogKey), {
+                                generatorName: userData.name || 'Unknown Generator',
+                                generatorId: deviceId,
+                                key: newKey,
+                                receiverName: null,
+                                receiverDevice: null,
+                                receiverFingerprint: null,
+                                timestamp: now,
+                                type: 'generation',
+                                fastGeneration: true
+                            });
+                        }
                     } catch (e) { console.warn('generation log write failed', e); }
                 } else {
                     localStorage.removeItem('dgxen_device_id');
@@ -658,6 +691,12 @@
             if(keyElement && keyElement.parentElement) keyElement.parentElement.appendChild(expiryText);
         }
         expiryText.innerHTML = `⏳ Valid for ${hours} Hours (Expires at ${timeString})`;
+        // The boot overlay now hides HERE — when the key is actually ready
+        // to show — not at the page's own 'load' event, which fires long
+        // before the real key-generation work (Firebase reads/writes,
+        // name checks) finishes. That gap was the black/empty screen you
+        // saw for 4-5s after the animation had already disappeared.
+        if (window.hideBootOverlay) window.hideBootOverlay();
     }
 
     document.getElementById('copyBtn').addEventListener('click', () => {
