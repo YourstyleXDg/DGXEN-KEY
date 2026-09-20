@@ -145,6 +145,82 @@
 </head>
 <body>
 
+<!-- Boot overlay: covers the black gap that can appear for a few seconds
+     before this page's content paints, most noticeable under heavy
+     device load. Pure text, centered, refractive glass-chip treatment —
+     mirrors login.html's boot overlay for visual consistency. Shows as
+     early as possible (this is the very first thing in <body>, before
+     any of the page's own heavier content), well before key generation
+     itself ever starts. Removed once the window 'load' event fires, or
+     after a hard 8s cap so it can never get stuck. -->
+<div id="bootOverlay" aria-hidden="true">
+  <div id="bootChip"><span>Initializing keygen</span></div>
+</div>
+<style>
+  #bootOverlay{
+    position:fixed;inset:0;z-index:999999;
+    background:#000;
+    display:flex;align-items:center;justify-content:center;
+    transition:opacity .5s ease;
+  }
+  #bootOverlay.hide{opacity:0;pointer-events:none;}
+  #bootChip{
+    position:relative;
+    padding:14px 28px;
+    border-radius:999px;
+    background:linear-gradient(135deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
+    border:1px solid rgba(255,255,255,.12);
+    box-shadow:
+      0 8px 32px rgba(0,0,0,.5),
+      inset 0 1px 0 rgba(255,255,255,.18),
+      inset 0 -1px 0 rgba(0,0,0,.4);
+    backdrop-filter:blur(20px) saturate(140%);
+    -webkit-backdrop-filter:blur(20px) saturate(140%);
+    overflow:hidden;
+  }
+  #bootChip::before{
+    content:'';
+    position:absolute;inset:0;
+    background:linear-gradient(115deg, transparent 20%, rgba(255,255,255,.14) 45%, rgba(255,255,255,.22) 50%, rgba(255,255,255,.14) 55%, transparent 80%);
+    background-size:220% 100%;
+    animation:bootSheen 2.6s ease-in-out infinite;
+    mix-blend-mode:overlay;
+  }
+  #bootChip span{
+    position:relative;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    font-size:13px;
+    font-weight:600;
+    letter-spacing:.06em;
+    color:rgba(255,255,255,.88);
+    text-shadow:0 1px 2px rgba(0,0,0,.6);
+    white-space:nowrap;
+  }
+  @keyframes bootSheen{
+    0%{background-position:130% 0;}
+    100%{background-position:-30% 0;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    #bootChip::before{animation:none;}
+  }
+</style>
+<script>
+  (function(){
+    function hideBootOverlay(){
+      var el = document.getElementById('bootOverlay');
+      if (!el) return;
+      el.classList.add('hide');
+      setTimeout(function(){ if (el && el.parentNode) el.parentNode.removeChild(el); }, 600);
+    }
+    if (document.readyState === 'complete') {
+      hideBootOverlay();
+    } else {
+      window.addEventListener('load', hideBootOverlay);
+    }
+    setTimeout(hideBootOverlay, 8000);
+  })();
+</script>
+
 <div class="container">
     
     <!-- NAME REGISTRATION PROMPT -->
@@ -413,17 +489,46 @@
                 }
 
                 document.getElementById('regStatus').style.color = "var(--accent)";
-                document.getElementById('regStatus').innerText = "Registering device...";
+                document.getElementById('regStatus').innerText = "Checking name availability...";
                 document.getElementById('saveNameBtn').disabled = true;
+
+                // Name uniqueness check — case-insensitive, trimmed, against
+                // every existing user record. Scanning the whole users/ list
+                // client-side is the only option here (this page has no
+                // server-side logic of its own), but it only runs once per
+                // registration attempt, not on every keystroke.
+                try {
+                    const allUsersSnap = await get(ref(db, 'users'));
+                    if (allUsersSnap.exists()) {
+                        const allUsers = allUsersSnap.val();
+                        const wantedNorm = name.toLowerCase();
+                        const taken = Object.values(allUsers).some(u => (u && u.name || '').trim().toLowerCase() === wantedNorm);
+                        if (taken) {
+                            document.getElementById('regStatus').style.color = "var(--error)";
+                            document.getElementById('regStatus').innerText = "That name is already taken — try a different one.";
+                            document.getElementById('saveNameBtn').disabled = false;
+                            return;
+                        }
+                    }
+                } catch (e) {
+                    console.error("Name availability check failed:", e);
+                    // Firebase unreachable — proceed rather than stranding
+                    // the person on a check we can't actually perform; a
+                    // genuine collision is rare and not catastrophic.
+                }
+
+                document.getElementById('regStatus').innerText = "Registering device...";
 
                 deviceId = generateUUID();
                 localStorage.setItem('dgxen_device_id', deviceId);
 
+                const nameSetAt = Date.now();
                 try {
                     await set(ref(db, 'users/' + deviceId), {
                         name: name,
                         status: 'active',
-                        joined: new Date().toISOString()
+                        joined: new Date().toISOString(),
+                        nameSetAt: nameSetAt
                     });
                 } catch (e) {
                     console.error("Firebase write error:", e);
@@ -497,8 +602,35 @@
                     
                     const expiresAt = now + (expiryHours * 60 * 60 * 1000);
                     
-                    await update(userRef, { lastGeneratedKey: newKey, keyExpiresAt: expiresAt });
+                    await update(userRef, { lastGeneratedKey: newKey, keyExpiresAt: expiresAt, keyGeneratedAt: now });
                     displayKeyInfo(newKey, expiresAt, expiryHours);
+
+                    // Always log a generation event here — this is the one
+                    // point every key generation passes through regardless
+                    // of whether it's ever later shared/used elsewhere, so
+                    // it's the only reliable place to flag fast generation
+                    // for every case ("any method, legitimate or fake").
+                    // login.html's own share-log write (when a DIFFERENT
+                    // device later uses this key) is a separate, later
+                    // event and doesn't fire for a generator's own first
+                    // login, so it can't cover this by itself.
+                    try {
+                        const { set: fbSet } = module;
+                        const nameSetAt = userData.nameSetAt;
+                        const fastGeneration = !!(nameSetAt && (now - Number(nameSetAt)) < 60000 && now >= Number(nameSetAt));
+                        const genLogKey = deviceId.replace(/[.#$\[\]\/]/g, '_') + '_' + now;
+                        await fbSet(ref(db, 'settings/shareLogs/' + genLogKey), {
+                            generatorName: userData.name || 'Unknown Generator',
+                            generatorId: deviceId,
+                            key: newKey,
+                            receiverName: null,
+                            receiverDevice: null,
+                            receiverFingerprint: null,
+                            timestamp: now,
+                            type: 'generation',
+                            fastGeneration: fastGeneration
+                        });
+                    } catch (e) { console.warn('generation log write failed', e); }
                 } else {
                     localStorage.removeItem('dgxen_device_id');
                     location.reload();
