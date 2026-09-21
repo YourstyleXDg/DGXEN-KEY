@@ -27,7 +27,7 @@
             font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             display: flex; 
             justify-content: center; 
-            align-items: center; 
+            align-items: flex-start; 
             min-height: 100svh; 
             margin: 0; 
             padding: 20px;
@@ -159,7 +159,10 @@
             50% { box-shadow: 0 0 0 6px rgba(255,210,60,.1), 0 0 26px rgba(255,190,40,.85); }
         }
 
-        .streak-node-bonus { font-size: 8.5px; font-weight: 800; color: var(--muted); margin-top: 5px; white-space: nowrap; }
+        .streak-node-bonus {
+            font-size: 8.5px; font-weight: 800; color: var(--muted); margin-top: 5px;
+            white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis;
+        }
         .streak-node.done ~ .streak-node-bonus, .streak-node-col:has(.streak-node.done) .streak-node-bonus { color: rgba(255,210,90,.75); }
         .streak-node-col:has(.streak-node.current) .streak-node-bonus { color: #ffd23c; font-weight: 900; }
 
