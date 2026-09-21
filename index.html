@@ -206,37 +206,38 @@
 </style>
 <script>
   (function(){
-    function hideBootOverlay(){
+    function hideBootOverlayNow(){
       var el = document.getElementById('bootOverlay');
       if (!el) return;
       el.classList.add('hide');
       setTimeout(function(){ if (el && el.parentNode) el.parentNode.removeChild(el); }, 600);
     }
-    // Exposed globally so displayKeyInfo() can hide it exactly when the
-    // key is actually ready, instead of at the page's own 'load' event
-    // (which fires well before the real Firebase work finishes and left
-    // a black gap after the animation had already disappeared).
-    window.hideBootOverlay = hideBootOverlay;
     // Cycles the chip's text through a short reassuring sequence for as
     // long as the overlay is up — real generation typically takes 4-5s,
-    // long enough that a single static line starts to feel stuck.
-    var bootPhrases = ['Initializing keygen', 'Verifying device', 'Almost there…'];
-    var bootPhraseIdx = 0;
-    var bootPhraseTimer = setInterval(function(){
-      bootPhraseIdx = (bootPhraseIdx + 1) % bootPhrases.length;
-      var el = document.getElementById('bootChipText');
-      if (el) el.textContent = bootPhrases[bootPhraseIdx];
-      else clearInterval(bootPhraseTimer);
-    }, 1600);
-    var _hideBootOverlayOrig = hideBootOverlay;
-    hideBootOverlay = function(){
-      clearInterval(bootPhraseTimer);
-      _hideBootOverlayOrig();
+    // long enough that a single static line starts to feel stuck. The
+    // first phrase gets noticeably more dwell time than the other two —
+    // it's the one shown while the page itself is still settling in, so
+    // it should read as the "main" state rather than flash by at the
+    // same pace as the later reassurance phrases.
+    var bootPhraseTimers = [];
+    var bootChipEl = document.getElementById('bootChipText');
+    function setBootPhrase(text){ if (bootChipEl) bootChipEl.textContent = text; }
+    bootPhraseTimers.push(setTimeout(function(){ setBootPhrase('Verifying device'); }, 2400));
+    bootPhraseTimers.push(setTimeout(function(){ setBootPhrase('Almost there…'); }, 2400 + 1300));
+    // The actual hide is requested from displayKeyInfo() once the key is
+    // truly ready — displayKeyInfo() itself is what creates the 0.5s
+    // lead time, by calling this immediately and only populating the
+    // visible key text 500ms later.
+    var hidePending = false;
+    window.hideBootOverlay = function(){
+      if (hidePending) return;
+      hidePending = true;
+      bootPhraseTimers.forEach(clearTimeout);
+      hideBootOverlayNow();
     };
-    window.hideBootOverlay = hideBootOverlay;
     // Hard cap — never let this sit forever if key generation somehow
     // never completes or errors out silently.
-    setTimeout(hideBootOverlay, 12000);
+    setTimeout(window.hideBootOverlay, 12000);
   })();
 </script>
 
@@ -678,25 +679,28 @@
     }
 
     function displayKeyInfo(key, expiresAt, hours) {
-        document.getElementById('finalKey').innerText = key;
-        const expiryDate = new Date(expiresAt);
-        const timeString = expiryDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        
-        let expiryText = document.getElementById('expiryTextInfo');
-        if(!expiryText) {
-            expiryText = document.createElement('p');
-            expiryText.id = 'expiryTextInfo';
-            expiryText.style = "color: #ffae00; font-size: 13px; font-weight: bold; margin: 12px 0 0; letter-spacing: 0.5px; position: relative; z-index: 2;";
-            const keyElement = document.getElementById('finalKey');
-            if(keyElement && keyElement.parentElement) keyElement.parentElement.appendChild(expiryText);
-        }
-        expiryText.innerHTML = `⏳ Valid for ${hours} Hours (Expires at ${timeString})`;
-        // The boot overlay now hides HERE — when the key is actually ready
-        // to show — not at the page's own 'load' event, which fires long
-        // before the real key-generation work (Firebase reads/writes,
-        // name checks) finishes. That gap was the black/empty screen you
-        // saw for 4-5s after the animation had already disappeared.
+        // Start the boot overlay's fade-out first, then populate/reveal
+        // the actual key 500ms later — so the overlay is already gone by
+        // the time the key appears, rather than both happening at once.
+        // The overlay disappearing a half-second ahead of the reveal
+        // reads as the loading state leading into the result, instead of
+        // the two events feeling simultaneous/reactive.
         if (window.hideBootOverlay) window.hideBootOverlay();
+        setTimeout(function() {
+            document.getElementById('finalKey').innerText = key;
+            const expiryDate = new Date(expiresAt);
+            const timeString = expiryDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+            let expiryText = document.getElementById('expiryTextInfo');
+            if(!expiryText) {
+                expiryText = document.createElement('p');
+                expiryText.id = 'expiryTextInfo';
+                expiryText.style = "color: #ffae00; font-size: 13px; font-weight: bold; margin: 12px 0 0; letter-spacing: 0.5px; position: relative; z-index: 2;";
+                const keyElement = document.getElementById('finalKey');
+                if(keyElement && keyElement.parentElement) keyElement.parentElement.appendChild(expiryText);
+            }
+            expiryText.innerHTML = `⏳ Valid for ${hours} Hours (Expires at ${timeString})`;
+        }, 500);
     }
 
     document.getElementById('copyBtn').addEventListener('click', () => {
