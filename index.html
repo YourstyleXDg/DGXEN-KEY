@@ -4,16 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#030504">
-    <title>Key Generated | DGXEN</title>
+    <title>Get a Free Key | DGXEN</title>
     <style>
         :root {
             --bg: #030504;
             --card-radius: 34px;
-            --text: #ffffff;
+            --text: #fff;
             --muted: #9ca5a0;
             --accent: #00ff88;
-            --accent-soft: rgba(0, 255, 136, 0.18);
-            --error: #ff5252;
+            --warning-bg: rgba(255, 170, 0, 0.1);
+            --warning-border: rgba(255, 170, 0, 0.3);
+            --warning-text: #ffaa00;
         }
         
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -39,714 +40,447 @@
             mix-blend-mode: soft-light; z-index: -1;
         }
 
-        .container { width: 100%; max-width: 400px; text-align: center; perspective: 1000px; }
+        .container { 
+            width: 100%; max-width: 420px; text-align: center; 
+            animation: slideUpFade 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
 
-        .screen-container { display: none; animation: slideUpFade 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-        @keyframes slideUpFade { from { opacity: 0; transform: translateY(30px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes slideUpFade { 
+            from { opacity: 0; transform: translateY(30px) scale(0.98); } 
+            to { opacity: 1; transform: translateY(0) scale(1); } 
+        }
 
+        .key-icon { 
+            width: 75px; height: 75px; border-radius: 50%; display: flex; 
+            justify-content: center; align-items: center; margin: 0 auto 20px; 
+            border: 1px solid rgba(255,255,255,.16); 
+            box-shadow: 0 12px 35px rgba(0,0,0,.35), 0 0 24px rgba(0,255,136,.12); 
+            position: relative; z-index: 10; background: #000; overflow: hidden; 
+        }
+        .key-icon img { width: 100%; height: 100%; object-fit: cover; }
+
+        h1 { font-size: 26px; font-weight: 800; margin-bottom: 8px; letter-spacing: 0.5px; }
+        .subtitle { color: var(--muted); font-size: 13.5px; margin-bottom: 30px; }
+
+        /* Premium Glass Card */
         .glass-card {
             background: linear-gradient(145deg, rgba(255,255,255,.105), rgba(255,255,255,.034) 52%, rgba(255,255,255,.018));
             border: 1px solid rgba(255,255,255,.13);
             border-radius: var(--card-radius);
-            padding: 40px 28px;
+            padding: 40px 30px;
             box-shadow: 0 38px 100px rgba(0,0,0,.72), 0 0 70px rgba(255,255,255,.045), inset 0 1.5px rgba(255,255,255,.28), inset 0 -1px rgba(0,0,0,.45);
             backdrop-filter: blur(30px) saturate(175%) contrast(108%);
             -webkit-backdrop-filter: blur(30px) saturate(175%) contrast(108%);
-            position: relative; overflow: hidden; text-align: center;
+            position: relative; overflow: hidden; text-align: left;
         }
 
-        .glass-card::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1.4px; background: linear-gradient(135deg, rgba(255,105,105,.72), rgba(255,255,255,.78) 17%, transparent 42%, rgba(90,160,255,.55) 75%, rgba(255,255,255,.85)); -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; z-index: 6; }
+        .glass-card::before { 
+            content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1.4px; 
+            background: linear-gradient(135deg, rgba(255,105,105,.72), rgba(255,255,255,.78) 17%, transparent 42%, rgba(90,160,255,.55) 75%, rgba(255,255,255,.85)); 
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); 
+            -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; z-index: 6; 
+        }
         
-        .glass-glare { position: absolute; top: -100%; left: -100%; width: 300%; height: 300%; background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.04) 45%, rgba(255, 255, 255, 0.25) 50%, rgba(255, 255, 255, 0.04) 55%, rgba(255, 255, 255, 0) 100%); transform: rotate(35deg) translateY(-50%); pointer-events: none; z-index: 1; animation: glareSweep 5.5s cubic-bezier(0.35, 0, 0.25, 1) infinite alternate; }
+        /* Internal Glare */
+        .glass-glare { 
+            position: absolute; top: -100%; left: -100%; width: 300%; height: 300%; 
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.04) 45%, rgba(255, 255, 255, 0.25) 50%, rgba(255, 255, 255, 0.04) 55%, rgba(255, 255, 255, 0) 100%); 
+            transform: rotate(35deg) translateY(-50%); pointer-events: none; z-index: 1; 
+            animation: glareSweep 5.5s cubic-bezier(0.35, 0, 0.25, 1) infinite alternate; 
+        }
         @keyframes glareSweep { 0% { transform: rotate(35deg) translateY(-50%); } 100% { transform: rotate(35deg) translateY(50%); } }
 
-        .key-icon { width: 80px; height: 80px; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 24px; border: 1px solid rgba(255,255,255,.16); box-shadow: 0 12px 35px rgba(0,0,0,.35), 0 0 24px rgba(0,255,136,.12); position: relative; z-index: 10; background: #000; overflow: hidden; }
-        .key-icon img { width: 100%; height: 100%; object-fit: cover; }
+        /* Step Indicator */
+        .progress-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; position: relative; z-index: 2; }
+        .step-indicator { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); font-weight: 700; letter-spacing: 0.5px; }
+        .circle { width: 24px; height: 24px; border: 2px solid rgba(255,255,255,0.1); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 11px; font-weight: bold; background: rgba(0,0,0,0.4); }
+        .circle.active { border-color: var(--accent); color: var(--bg); background: var(--accent); box-shadow: 0 0 15px rgba(0,255,136,0.3); }
+        .line { flex-grow: 1; height: 2px; background: rgba(255,255,255,0.08); margin: 0 15px; border-radius: 2px; }
 
-        h2 { 
-            font-size: 24px; 
-            margin: 0 0 10px; 
-            color: var(--accent); 
-            font-weight: 800; 
-            letter-spacing: .3px; 
-            text-shadow: 0 0 22px rgba(0,255,136,.35); 
-            position: relative; 
-            z-index: 2;
+        h2 { font-size: 22px; margin-bottom: 12px; color: #fff; font-weight: 800; letter-spacing: .3px; position: relative; z-index: 2; display: flex; align-items: center; gap: 8px;}
+        .card-p { color: var(--muted); font-size: 14.5px; line-height: 1.6; margin-bottom: 25px; position: relative; z-index: 2;}
+
+        /* ============================================================
+           STREAK FLOW CHART — small horizontal Day 1-7 strip shown
+           above "Unlock Access". Always visible (even at zero streak,
+           per spec — everyone sees the chart, it's just unlit for a
+           new user); the only thing that changes is how far the
+           glowing thread has traveled and which day-node is lit.
+           ============================================================ */
+        .streak-strip-wrap { position: relative; z-index: 2; margin-bottom: 26px; }
+        .streak-strip-label {
+            display: flex; align-items: center; justify-content: space-between;
+            font-size: 10.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+            color: var(--muted); margin-bottom: 10px;
+        }
+        .streak-strip-label .streak-lifetime {
+            display: flex; align-items: center; gap: 5px;
+            color: #ffd23c; font-weight: 900;
+        }
+        .streak-strip-label .streak-lifetime svg { width: 12px; height: 12px; }
+
+        .streak-strip {
+            display: flex; align-items: center; gap: 0; position: relative;
+            padding: 4px 0;
+        }
+        .streak-node-col { display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 0; position: relative; }
+        .streak-node {
+            width: 26px; height: 26px; border-radius: 50%; flex: none;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px; font-weight: 900; color: rgba(255,255,255,.35);
+            background: rgba(255,255,255,.05); border: 1.5px solid rgba(255,255,255,.12);
+            position: relative; z-index: 2; transition: transform .3s ease;
+        }
+        .streak-node.done { color: #0a0a08; background: linear-gradient(135deg,#ffd23c,#ff9a1a); border-color: transparent; box-shadow: 0 0 10px rgba(255,170,30,.4); }
+        .streak-node.current {
+            color: #0a0a08; background: linear-gradient(135deg,#fff2c4,#ffd23c);
+            border-color: transparent; transform: scale(1.18);
+            box-shadow: 0 0 0 3px rgba(255,210,60,.18), 0 0 18px rgba(255,190,40,.65);
+            animation: streakNodePulse 2.1s ease-in-out infinite;
+        }
+        @keyframes streakNodePulse {
+            0%,100% { box-shadow: 0 0 0 3px rgba(255,210,60,.18), 0 0 18px rgba(255,190,40,.65); }
+            50% { box-shadow: 0 0 0 6px rgba(255,210,60,.1), 0 0 26px rgba(255,190,40,.85); }
         }
 
-        .card-p { 
-            color: var(--muted); 
-            font-size: 14px; 
-            line-height: 1.5; 
-            margin: 0 0 24px; 
-            position: relative; 
-            z-index: 2;
-        }
+        .streak-node-bonus { font-size: 8.5px; font-weight: 800; color: var(--muted); margin-top: 5px; white-space: nowrap; }
+        .streak-node.done ~ .streak-node-bonus, .streak-node-col:has(.streak-node.done) .streak-node-bonus { color: rgba(255,210,90,.75); }
+        .streak-node-col:has(.streak-node.current) .streak-node-bonus { color: #ffd23c; font-weight: 900; }
 
-        .name-input, .key-box { 
-            width: 100%; 
-            padding: 20px 14px; 
-            background: rgba(0,0,0,.45); 
-            border: 1px solid rgba(255,255,255,.13); 
-            color: #fff; 
-            border-radius: 20px; 
-            text-align: center; 
-            font-size: 16px; 
-            outline: none; 
-            box-shadow: inset 0 2px 8px rgba(0,0,0,.35); 
-            margin-bottom: 24px; 
-            position: relative; 
-            z-index: 2;
+        /* The connecting thread between node centers. Each segment sits
+           behind its pair of nodes (z-index 1) and is itself a two-layer
+           bar: a dim base track (always visible, every user sees the
+           full 1-7 path) plus a bright glow-fill whose width is set
+           per-segment via --fill (0 to 1) — 0 = not reached yet, 1 =
+           fully completed to the next node, a fractional value = the
+           user is partway *through* the current day (time elapsed since
+           today's unlock / until reset), which is what makes the glow
+           visibly creep forward within a day rather than only jumping
+           on whole-day boundaries. */
+        .streak-thread { position: absolute; top: 13px; left: 50%; right: -50%; height: 3px; z-index: 1; border-radius: 3px; background: rgba(255,255,255,.08); }
+        .streak-thread::after {
+            content: ""; position: absolute; inset: 0; border-radius: 3px;
+            width: calc(var(--fill, 0) * 100%);
+            background: linear-gradient(90deg, #ff9a1a, #ffd23c);
+            box-shadow: 0 0 8px rgba(255,190,40,.8);
+            transition: width .6s cubic-bezier(.4,0,.2,1);
         }
-        .name-input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft), inset 0 2px 8px rgba(0,0,0,.3); }
+        .streak-node-col:last-child .streak-thread { display: none; }
 
-        #finalKey { 
-            color: var(--accent); 
-            font-family: monospace; 
-            font-size: 18px; 
-            font-weight: 800; 
-            letter-spacing: 1.5px; 
-            text-shadow: 0 0 12px rgba(0,255,136,.4); 
-            display: block;
-            word-break: break-all;
+        .streak-strip-foot {
+            margin-top: 12px; font-size: 11.5px; color: var(--muted); text-align: center;
+            font-weight: 600;
         }
+        .streak-strip-foot b { color: #ffd23c; font-weight: 800; }
+
+        .warning { 
+            background: var(--warning-bg); border: 1px solid var(--warning-border); 
+            border-radius: 16px; padding: 16px; display: flex; gap: 14px; margin-bottom: 25px; 
+            position: relative; z-index: 2; backdrop-filter: blur(10px);
+        }
+        .warning-icon { color: var(--warning-text); font-size: 20px; }
+        .warning-title { color: var(--warning-text); font-weight: 800; font-size: 14px; margin-bottom: 4px; letter-spacing: 0.3px;}
+        .warning-text { color: rgba(255,255,255,0.7); font-size: 12.5px; line-height: 1.5; }
 
         .btn { 
-            width: 100%; 
-            padding: 18px; 
-            border: 0; 
-            border-radius: 18px; 
-            background: linear-gradient(135deg,#fff,#dfe5e1); 
-            color: #020302; 
-            font-size: 15px; 
-            font-weight: 900; 
-            letter-spacing: .4px; 
-            cursor: pointer; 
+            width: 100%; padding: 18px; border: 0; border-radius: 16px; 
+            background: linear-gradient(135deg,#fff,#dfe5e1); color: #020302; 
+            font-size: 15px; font-weight: 900; letter-spacing: .35px; cursor: pointer; 
             box-shadow: 0 10px 28px rgba(0,0,0,.38), inset 0 1px #fff; 
             transition: transform .15s, box-shadow .25s, background .25s; 
-            position: relative; 
-            z-index: 2;
+            position: relative; z-index: 2; display: flex; justify-content: center; align-items: center; gap: 8px;
         }
-        .btn:active { transform: scale(0.975); }
-        .btn-success { background: linear-gradient(135deg,#60ffb5,#00cf73); box-shadow: 0 10px 30px rgba(0,255,136,.32); }
-        
-        .btn-red { background: linear-gradient(135deg, #ff6b6b, #e60000); color: white; box-shadow: 0 10px 30px rgba(255, 68, 68, 0.3); border: none; }
-        .btn-red:active { transform: scale(0.975); }
-
-        .error-card { border-color: rgba(255, 82, 82, 0.4); background: linear-gradient(145deg, rgba(255,0,0,.05), rgba(255,255,255,.02)); box-shadow: 0 38px 100px rgba(0,0,0,.72), inset 0 1.5px rgba(255,82,82,.2); }
-        .error-icon { font-size: 55px; margin: 0 auto 16px; filter: drop-shadow(0 0 15px rgba(255,82,82,0.5)); position: relative; z-index: 2; }
-        .error-title { color: var(--error); font-size: 24px; font-weight: 800; margin-bottom: 12px; text-shadow: 0 0 20px rgba(255,82,82,.4); position: relative; z-index: 2; }
-
-        .contact-admin { display: inline-flex; align-items: center; justify-content: center; margin-top: 15px; padding: 12px 24px; border-radius: 999px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); color: var(--muted); font-size: 13px; font-weight: 700; text-decoration: none; transition: 0.3s; position: relative; z-index: 2; }
-        .contact-admin:hover { background: rgba(255, 255, 255, 0.12); color: #fff; border-color: rgba(255, 255, 255, 0.25); transform: scale(1.04); }
-
-        .footer { margin-top: 40px; color: rgba(255,255,255,0.22); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; font-weight: 800; }
+        .btn:hover { background: var(--accent); box-shadow: 0 10px 30px rgba(0,255,136,.32); transform: translateY(-2px); }
+        .btn:active { transform: translateY(0) scale(0.975); }
     </style>
 </head>
 <body>
 
-<!-- Boot overlay: covers the black gap that can appear for a few seconds
-     before this page's content paints, most noticeable under heavy
-     device load. Pure text, centered, refractive glass-chip treatment —
-     mirrors login.html's boot overlay for visual consistency. Shows as
-     early as possible (this is the very first thing in <body>, before
-     any of the page's own heavier content), well before key generation
-     itself ever starts. Removed once the window 'load' event fires, or
-     after a hard 8s cap so it can never get stuck. -->
-<div id="bootOverlay" aria-hidden="true">
-  <div id="bootChip"><span id="bootChipText">Initializing keygen</span></div>
-</div>
-<style>
-  #bootOverlay{
-    position:fixed;inset:0;z-index:999999;
-    background:#000;
-    display:flex;align-items:center;justify-content:center;
-    transition:opacity .5s ease;
-  }
-  #bootOverlay.hide{opacity:0;pointer-events:none;}
-  #bootChip{
-    position:relative;
-    padding:14px 28px;
-    border-radius:999px;
-    background:linear-gradient(135deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
-    border:1px solid rgba(255,255,255,.12);
-    box-shadow:
-      0 8px 32px rgba(0,0,0,.5),
-      inset 0 1px 0 rgba(255,255,255,.18),
-      inset 0 -1px 0 rgba(0,0,0,.4);
-    backdrop-filter:blur(20px) saturate(140%);
-    -webkit-backdrop-filter:blur(20px) saturate(140%);
-    overflow:hidden;
-  }
-  #bootChip::before{
-    content:'';
-    position:absolute;inset:0;
-    background:linear-gradient(115deg, transparent 20%, rgba(255,255,255,.14) 45%, rgba(255,255,255,.22) 50%, rgba(255,255,255,.14) 55%, transparent 80%);
-    background-size:220% 100%;
-    animation:bootSheen 2.6s ease-in-out infinite;
-    mix-blend-mode:overlay;
-  }
-  #bootChip span{
-    position:relative;
-    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
-    font-size:13px;
-    font-weight:600;
-    letter-spacing:.06em;
-    color:rgba(255,255,255,.88);
-    text-shadow:0 1px 2px rgba(0,0,0,.6);
-    white-space:nowrap;
-  }
-  @keyframes bootSheen{
-    0%{background-position:130% 0;}
-    100%{background-position:-30% 0;}
-  }
-  @media (prefers-reduced-motion:reduce){
-    #bootChip::before{animation:none;}
-  }
-</style>
-<script>
-  (function(){
-    function hideBootOverlayNow(){
-      var el = document.getElementById('bootOverlay');
-      if (!el) return;
-      el.classList.add('hide');
-      setTimeout(function(){ if (el && el.parentNode) el.parentNode.removeChild(el); }, 600);
-    }
-    // Cycles the chip's text through a short reassuring sequence for as
-    // long as the overlay is up — real generation typically takes 4-5s,
-    // long enough that a single static line starts to feel stuck. The
-    // first phrase gets noticeably more dwell time than the other two —
-    // it's the one shown while the page itself is still settling in, so
-    // it should read as the "main" state rather than flash by at the
-    // same pace as the later reassurance phrases.
-    var bootPhraseTimers = [];
-    var bootChipEl = document.getElementById('bootChipText');
-    function setBootPhrase(text){ if (bootChipEl) bootChipEl.textContent = text; }
-    bootPhraseTimers.push(setTimeout(function(){ setBootPhrase('Verifying device'); }, 2400));
-    bootPhraseTimers.push(setTimeout(function(){ setBootPhrase('Almost there…'); }, 2400 + 1300));
-    // The actual hide is requested from displayKeyInfo() once the key is
-    // truly ready — displayKeyInfo() itself is what creates the 0.5s
-    // lead time, by calling this immediately and only populating the
-    // visible key text 500ms later.
-    var hidePending = false;
-    window.hideBootOverlay = function(){
-      if (hidePending) return;
-      hidePending = true;
-      bootPhraseTimers.forEach(clearTimeout);
-      hideBootOverlayNow();
-    };
-    // Hard cap — never let this sit forever if key generation somehow
-    // never completes or errors out silently.
-    setTimeout(window.hideBootOverlay, 12000);
-  })();
-</script>
-
 <div class="container">
-    
-    <!-- NAME REGISTRATION PROMPT -->
-    <div id="namePrompt" class="screen-container">
-        <div class="glass-card">
-            <div class="glass-glare"></div>
-            <div class="key-icon"><img src="./assets/logo.png" alt="DGXEN" onerror="this.style.display='none'"></div>
-            <h2>Welcome to DGXEN</h2>
-            <p class="card-p">Please enter your name to register your device on our secure network.</p>
-            <input type="text" id="userNameInput" class="name-input" placeholder="Enter your name..." autocomplete="off">
-            <button class="btn" id="saveNameBtn">REGISTER DEVICE</button>
-            <p id="regStatus" style="color: var(--error); font-size: 13px; font-weight: 600; margin-top: 15px; height: 15px; position: relative; z-index: 2;"></p>
+    <div class="key-icon">
+        <img src="./assets/logo.png" alt="DGXEN" onerror="this.style.display='none'">
+    </div>
+    <h1>Get a Free Key</h1>
+    <p class="subtitle">Complete the step below to receive your access key.</p>
+
+    <div class="progress-container">
+        <div class="step-indicator">
+            <div class="circle active">1</div>
+            <span style="color: #fff;">Step 1 of 1</span>
         </div>
+        <div class="line"></div>
+        <div class="circle" style="color: rgba(255,255,255,0.3);">✓</div>
     </div>
 
-    <!-- MAIN KEY GENERATOR -->
-    <div id="mainContainer" class="screen-container">
-        <div class="glass-card">
-            <div class="glass-glare"></div>
-            <div class="key-icon"><img src="./assets/logo.png" alt="DGXEN" onerror="this.style.display='none'"></div>
-            <h2>Generation Success!</h2>
-            <p class="card-p">One key - One login</p>
-            <div class="key-box">
-                <span id="finalKey">SECURE FETCHING...</span>
+    <div class="glass-card">
+        <div class="glass-glare"></div>
+
+        <div class="streak-strip-wrap" id="streakStripWrap">
+            <div class="streak-strip-label">
+                <span>Streak Progress</span>
+                <span class="streak-lifetime" id="streakLifetimeTag" style="display:none;">
+                    <svg viewBox="0 0 24 24" fill="#ffd23c" stroke="none"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
+                    <span id="streakLifetimeNum">0</span> day streak
+                </span>
             </div>
-            <button class="btn" id="copyBtn">COPY TO CLIPBOARD</button>
+            <div class="streak-strip" id="streakStrip"></div>
+            <div class="streak-strip-foot" id="streakStripFoot"></div>
         </div>
-    </div>
 
-    <!-- DEVICE BANNED SCREEN -->
-    <div id="bannedContainer" class="screen-container">
-        <div class="glass-card error-card">
-            <div class="glass-glare"></div>
-            <div class="error-icon">💀</div>
-            <div class="error-title">Device Banned</div>
-            <p class="card-p" id="banReasonText" style="color: #d1d1d1; line-height: 1.6;">Your device has been permanently blacklisted from the DGXEN network. You can no longer generate access keys.</p>
-            <a href="https://t.me/DGXEN" target="_blank" class="contact-admin">Contact Support</a>
+        <h2>Unlock Access</h2>
+        <p class="card-p">To continue, click the button below to complete the first step. You will be automatically redirected to your key once finished.</p>
+
+        <div class="warning">
+            <div class="warning-icon">⚠️</div>
+            <div>
+                <div class="warning-title">Security Notice</div>
+                <div class="warning-text">The use of bots or any kind of link automation will result in a permanent ban.</div>
+            </div>
         </div>
-    </div>
 
-    <!-- BYPASS SCREEN -->
-    <div id="bypassContainer" class="screen-container">
-        <div class="glass-card error-card">
-            <div class="glass-glare"></div>
-            <div class="error-icon">🚫</div>
-            <div class="error-title">Bypass Detected!</div>
-            <p class="card-p" style="color: #d1d1d1;">Direct access is prohibited. Please use the official App link to generate your key.</p>
-            <button class="btn btn-red" id="returnBtn" style="margin-top: 10px;">RETURN TO STEPS</button>
-        </div>
+        <!-- The real proof-of-visit checkpoint is gate.html now (only
+             reachable via vplink's own redirect back to us), not this
+             button. Writing a claim here, at tap-time, would mean vplink
+             never actually has to be visited at all — someone could tap
+             this and immediately open index.html in a new tab, skipping
+             vplink entirely. This button now does nothing more than send
+             the person to vplink; see gate.html for where the claim is
+             actually created, and index.html's verifyAndRun() for where
+             it's consumed. -->
+        <button class="btn" id="continueBtn" onclick="goToVplink()">
+            CONTINUE TO STEP ➜
+        </button>
+        <p id="vplinkRetryNote" style="display:none; margin: 12px 0 0; font-size: 12px; color: var(--muted); text-align: center;"></p>
     </div>
-
-    <div class="footer">DGXEN SECURITY SYSTEM</div>
 </div>
 
 <script type="module">
+    // ============================================================
+    // STREAK FLOW CHART — reads this device's streak record (written
+    // by index.html at key-generation time — this page never writes
+    // streak fields, only displays them) and the admin-configured
+    // bonus-minutes table, then renders the Day 1-7 strip above
+    // "Unlock Access".
+    //
+    // Shown to EVERY visitor, streak or no streak — a brand-new device
+    // sees the same 1-7 chart, just fully unlit (node 1 is the only one
+    // faintly marked as "start", no glow thread yet). This matches the
+    // spec: the chart itself is always visible; only its lit state
+    // differs per user.
+    //
+    // Schema read here (all read-only):
+    //   settings/streakSystem/{enabled,resetHour}
+    //   settings/streakBonusMinutes/"1".."7"
+    //   users/<deviceId>/streak/{lifetimeDays,cycleDay,cycleDirection,
+    //                            lastUnlockDate}
+    // ============================================================
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    const firebaseConfig = {
-        databaseURL: "https://login-pass-1a196-default-rtdb.firebaseio.com/"
-    };
+    const firebaseConfig = { databaseURL: "https://login-pass-1a196-default-rtdb.firebaseio.com/" };
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // The Worker's /consume endpoint — the ONLY place a key-flow token is
-    // ever validated and burned (see the big comment inside verifyAndRun()
-    // below for why this moved server-side). Keep this in sync with
-    // wherever worker.js is actually deployed.
-    const WORKER_CONSUME_URL = "https://dgxen-ai-bot.akkumsgsjshjwej.workers.dev/consume";
+    const DEFAULT_BONUS = { 1: 0, 2: 20, 3: 40, 4: 60, 5: 80, 6: 120, 7: 180 };
 
-    function switchScreen(screenId) {
-        const screens = ['namePrompt', 'mainContainer', 'bannedContainer', 'bypassContainer'];
-        screens.forEach(id => { document.getElementById(id).style.display = 'none'; });
-        document.getElementById(screenId).style.display = 'block';
-        // Nothing to wait for once we've landed on a screen that isn't
-        // actively generating a key (name prompt, banned, bypass) — hide
-        // the boot overlay right away rather than leaving it up until the
-        // key-generation completion hook or the hard cap. mainContainer
-        // is deliberately excluded: that's the key-generation screen, and
-        // hiding happens from displayKeyInfo() once the key is truly
-        // ready, not just once this screen becomes visible.
-        if (screenId !== 'mainContainer' && window.hideBootOverlay) window.hideBootOverlay();
+    function fmtBonus(mins) {
+        return mins > 0 ? `4h+${mins}m` : '4h';
     }
 
-    function generateUUID() {
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-        });
-    }
-
-    async function verifyAndRun() {
-        // ===== ACCESS GATE: server-consumed, single-use token =====
-        //
-        // Replaces the earlier client-side Firebase-transaction claim
-        // design (which read/wrote settings/keyFlowClaims/<visitorId>
-        // straight from this page). That approach had a real gap: a page
-        // refresh re-runs the exact same client-side JS against the exact
-        // same URL, and anything checkable/consumable from the browser
-        // is — by definition — replayable from the browser too, given
-        // network timing, retried calls, or simply reopening a copied
-        // link inside the claim's age window.
-        //
-        // Now: worker.js's /gate route (reachable only via vplink's own
-        // redirect — vplink's dashboard only supports one fixed
-        // destination, no per-request parameters) checks the Referer
-        // header server-side, then mints a signed, single-use token and
-        // redirects here with it as ?token=. This page's ONLY job with
-        // that token is to POST it, once, to the Worker's /consume
-        // endpoint — which is the ONLY place that ever validates AND
-        // burns it, atomically, server-side. A refreshed page or a
-        // re-pasted link sends the same token again; /consume finds
-        // nothing left to burn and returns invalid. There is no
-        // client-side state anywhere that, if replayed, could pass this
-        // check again — unlike the old design, nothing here depends on
-        // the browser's own memory of what it already did.
-        //
-        // Earlier approaches this replaced, and why each fell short:
-        //   - securePass === 'true' / source === "official" / referrer
-        //     checks — fixed values or unreliable browser signals, easily
-        //     guessed/spoofed or simply empty depending on the browser
-        //   - a fresh random token written to localStorage BY steps.html
-        //     — looked right, but nothing then required vplink to
-        //     actually be visited before generating a key
-        //   - claim written by steps.html's button itself — same gap:
-        //     tapping the button was enough, vplink was optional
-        //   - a SINGLE SHARED Firebase timestamp — one visitor's refresh
-        //     could invalidate a different visitor's still-valid claim
-        //   - "accept any unconsumed claim in the list" — let an
-        //     unrelated tab (or a bypass attempt) ride along on a claim
-        //     it never earned
-        //   - visitorId read from localStorage that nothing ever wrote
-        //     to (leftover from a removed static gate.html design) —
-        //     silently always failed
-        //   - visitorId + claim consumed via a CLIENT-SIDE Firebase
-        //     transaction — the gap this rewrite specifically closes: a
-        //     refresh/replay of the same client-side logic could, under
-        //     the wrong timing, look identical to a fresh legitimate
-        //     visit. Consumption now happens server-side instead, in a
-        //     single atomic verify-and-burn request.
-        let isValidAccess = false;
-
-        // Developer/testing override: ?dev=<value>, checked against
-        // settings/devBypassSecret in Firebase — never a value hardcoded
-        // in this file, so reading the source teaches nothing. Rotate it
-        // anytime from the admin panel if it ever leaks; no redeploy
-        // needed. Only takes effect if a devBypassSecret is actually set.
-        //
-        // SINGLE-USE: the secret is deleted from Firebase immediately
-        // after a successful match, in the same spirit as the normal
-        // flow's token burn — otherwise this would be exactly the
-        // copy-paste/refresh bypass the rest of this function exists to
-        // close, just under a different name. A copied dev link (e.g.
-        // long-pressed and copied off the "Get Link" button while a dev
-        // session was active) stops working the moment it's used once;
-        // generating a new dev link requires setting a fresh
-        // devBypassSecret from the admin panel again.
-        //
-        // TIME-LIMITED TOO, on top of single-use: the burn-on-use above
-        // only protects against reuse *after* a successful delete actually
-        // lands. It does nothing for a secret that was set once and then
-        // forgotten about (never rotated, never manually cleared) — that
-        // stays live and reusable indefinitely, which is a real gap: a
-        // stale value sitting in Firebase, or a delete that silently fails,
-        // has no other guard. This adds an automatic ceiling that doesn't
-        // depend on remembering to clean up: the first time any client
-        // observes a given secret value, it records that moment in
-        // settings/devBypassSecretMeta; the same value is only ever
-        // accepted within DEV_BYPASS_MAX_AGE_MS of that first sighting,
-        // however many devices or tabs try it. No admin-panel change is
-        // needed for this — it's tracked entirely from here.
-        const DEV_BYPASS_MAX_AGE_MS = 10 * 60 * 1000; // 10 minutes
-        try {
-            const params = new URLSearchParams(window.location.search);
-            const devParam = params.get('dev');
-            if (devParam) {
-                const secretSnap = await get(ref(db, 'settings/devBypassSecret'));
-                if (secretSnap.exists() && String(secretSnap.val()) === devParam) {
-                    const metaRef = ref(db, 'settings/devBypassSecretMeta');
-                    const metaSnap = await get(metaRef);
-                    const meta = metaSnap.exists() ? metaSnap.val() : null;
-                    let firstSeenAt;
-                    if (meta && meta.secret === devParam && meta.firstSeenAt) {
-                        firstSeenAt = meta.firstSeenAt;
-                    } else {
-                        // First time this exact value has been checked — start its clock now.
-                        firstSeenAt = Date.now();
-                        try { await set(metaRef, { secret: devParam, firstSeenAt: firstSeenAt }); } catch (e) {}
-                    }
-                    const age = Date.now() - firstSeenAt;
-                    if (age <= DEV_BYPASS_MAX_AGE_MS) {
-                        isValidAccess = true;
-                    }
-                    // Burn the secret regardless of whether it was still within
-                    // the age window — either way this exact attempt consumes
-                    // it, so it can never be checked again either way.
-                    try { await set(ref(db, 'settings/devBypassSecret'), null); } catch (e) { /* best-effort burn */ }
-                    try { await set(metaRef, null); } catch (e) { /* best-effort cleanup */ }
-                }
-            }
-        } catch (e) { /* Firebase unreachable — fall through to the normal check */ }
-
-        // A returning visitor whose device already has a still-valid,
-        // unexpired key does NOT need a fresh token to see that same key
-        // again — that's a legitimate refresh of access they already
-        // earned on an earlier vplink visit, not a new key-generation
-        // event. Requiring a brand-new token on every refresh would
-        // wrongly bounce genuine returning users to the bypass screen.
-        // The token gate below therefore only applies to: a first-time
-        // device (no deviceId yet), or a device whose previous key has
-        // expired and is asking for a new one — both of which ARE new
-        // key-generation events and DO require proof of a fresh vplink
-        // visit. generateLockedKey() further down still independently
-        // re-checks the real expiry from Firebase before deciding whether
-        // to hand back the cached key or mint a new one — this is just
-        // the up-front gate that decides whether to show the generator
-        // screen at all.
-        if (!isValidAccess) {
-            const existingDeviceId = localStorage.getItem('dgxen_device_id');
-            if (existingDeviceId) {
-                try {
-                    const userSnap = await get(ref(db, 'users/' + existingDeviceId));
-                    if (userSnap.exists()) {
-                        const userData = userSnap.val();
-                        if (userData.status !== 'banned' &&
-                            userData.lastGeneratedKey &&
-                            userData.keyExpiresAt &&
-                            Date.now() < userData.keyExpiresAt) {
-                            isValidAccess = true;
-                        }
-                    }
-                } catch (e) { /* Firebase unreachable — fall through to the token check below */ }
-            }
-        }
-
-        if (!isValidAccess) {
-            try {
-                const params = new URLSearchParams(window.location.search);
-                const token = params.get('token');
-                if (token) {
-                    const resp = await fetch(WORKER_CONSUME_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ token })
-                    });
-                    const result = await resp.json();
-                    if (resp.ok && result && result.valid) {
-                        isValidAccess = true;
-                    }
-                }
-            } catch (e) { /* Worker unreachable — falls through to bypass screen below */ }
-        }
-
-        if (!isValidAccess) {
-            switchScreen('bypassContainer');
-            return;
-        }
-
-        if (window.history.replaceState) {
-            const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
-            window.history.replaceState({}, document.title, cleanUrl);
-        }
-
-        let deviceId = localStorage.getItem('dgxen_device_id');
-
-        if (!deviceId) {
-            switchScreen('namePrompt');
-
-            document.getElementById('saveNameBtn').onclick = async () => {
-                const name = document.getElementById('userNameInput').value.trim();
-                if (name.length < 2) {
-                    document.getElementById('regStatus').innerText = "Enter a valid name (min 2 letters)";
-                    return;
-                }
-
-                document.getElementById('regStatus').style.color = "var(--accent)";
-                document.getElementById('regStatus').innerText = "Checking name availability...";
-                document.getElementById('saveNameBtn').disabled = true;
-
-                // Name uniqueness check — case-insensitive, trimmed, against
-                // every existing user record. Scanning the whole users/ list
-                // client-side is the only option here (this page has no
-                // server-side logic of its own), but it only runs once per
-                // registration attempt, not on every keystroke.
-                try {
-                    const allUsersSnap = await get(ref(db, 'users'));
-                    if (allUsersSnap.exists()) {
-                        const allUsers = allUsersSnap.val();
-                        const wantedNorm = name.toLowerCase();
-                        const taken = Object.values(allUsers).some(u => (u && u.name || '').trim().toLowerCase() === wantedNorm);
-                        if (taken) {
-                            document.getElementById('regStatus').style.color = "var(--error)";
-                            document.getElementById('regStatus').innerText = "That name is already taken — try a different one.";
-                            document.getElementById('saveNameBtn').disabled = false;
-                            return;
-                        }
-                    }
-                } catch (e) {
-                    console.error("Name availability check failed:", e);
-                    // Firebase unreachable — proceed rather than stranding
-                    // the person on a check we can't actually perform; a
-                    // genuine collision is rare and not catastrophic.
-                }
-
-                document.getElementById('regStatus').innerText = "Registering device...";
-
-                deviceId = generateUUID();
-                localStorage.setItem('dgxen_device_id', deviceId);
-
-                const nameSetAt = Date.now();
-                try {
-                    await set(ref(db, 'users/' + deviceId), {
-                        name: name,
-                        status: 'active',
-                        joined: new Date().toISOString(),
-                        nameSetAt: nameSetAt
-                    });
-                } catch (e) {
-                    console.error("Firebase write error:", e);
-                }
-
-                proceedToKey();
-            };
+    // How far into the CURRENT day's window we are, as a 0..1 fraction,
+    // measured between the last reset-hour boundary and the next one.
+    // This is what lets the glow thread creep forward smoothly through
+    // the day rather than only jumping once every 24h — e.g. sitting at
+    // 60% of the way to the reset hour shows the thread 60% of the way
+    // into the current day's segment.
+    function currentDayProgressFraction(resetHour) {
+        const now = new Date();
+        const boundaryToday = new Date(now);
+        boundaryToday.setHours(resetHour, 0, 0, 0);
+        let windowStart;
+        if (now >= boundaryToday) {
+            windowStart = boundaryToday;
         } else {
-            try {
-                const userRef = ref(db, 'users/' + deviceId);
-                const snapshot = await get(userRef);
-                
-                if (!snapshot.exists()) {
-                    localStorage.removeItem('dgxen_device_id');
-                    location.reload();
-                    return;
-                }
+            windowStart = new Date(boundaryToday);
+            windowStart.setDate(windowStart.getDate() - 1);
+        }
+        const windowEnd = new Date(windowStart);
+        windowEnd.setDate(windowEnd.getDate() + 1);
+        const total = windowEnd - windowStart;
+        const elapsed = now - windowStart;
+        return Math.max(0, Math.min(1, elapsed / total));
+    }
 
-                if (snapshot.val().status === 'banned') {
-                    let dbReason = snapshot.val().banReason || "";
-                    if (dbReason.toLowerCase().includes("generate a new key") || dbReason === "") {
-                        document.getElementById('banReasonText').innerText = "Your device has been permanently blacklisted from the DGXEN network. You can no longer generate access keys.";
-                    } else {
-                        document.getElementById('banReasonText').innerText = "Reason: " + dbReason;
-                    }
-                    switchScreen('bannedContainer');
-                    return;
-                }
-            } catch (e) {
-                console.error("Firebase read error:", e);
+    function renderStreakStrip(streak, bonusMap, resetHour, systemEnabled) {
+        const stripEl = document.getElementById('streakStrip');
+        const footEl = document.getElementById('streakStripFoot');
+        const lifetimeTag = document.getElementById('streakLifetimeTag');
+        const lifetimeNum = document.getElementById('streakLifetimeNum');
+        if (!stripEl) return;
+
+        const hasStreak = systemEnabled && streak && Number(streak.lifetimeDays) >= 1;
+        const cycleDay = hasStreak ? Math.max(1, Math.min(7, Number(streak.cycleDay) || 1)) : 0;
+        const direction = streak && streak.cycleDirection === 'down' ? 'down' : 'up';
+
+        if (hasStreak) {
+            lifetimeTag.style.display = 'flex';
+            lifetimeNum.textContent = String(streak.lifetimeDays);
+        } else {
+            lifetimeTag.style.display = 'none';
+        }
+
+        // Within-day progress only matters for the segment leading INTO
+        // the current day (i.e. how "used up" today is) — every segment
+        // before it is fully lit (1), every segment after is unlit (0).
+        const todayFraction = hasStreak ? currentDayProgressFraction(resetHour) : 0;
+
+        let html = '';
+        for (let day = 1; day <= 7; day++) {
+            const bonus = bonusMap[day] != null ? bonusMap[day] : DEFAULT_BONUS[day];
+            const isDone = hasStreak && day < cycleDay;
+            const isCurrent = hasStreak && day === cycleDay;
+            const nodeClass = isCurrent ? 'current' : (isDone ? 'done' : '');
+
+            // Thread fill for the segment that starts at THIS node and
+            // runs to the next one:
+            //   - fully before current day → 1 (complete)
+            //   - the current day's own outgoing segment → today's
+            //     elapsed-time fraction (this is the "glow creeps
+            //     forward with time, not just on whole days" part)
+            //   - anything after → 0
+            let fill = 0;
+            if (hasStreak) {
+                if (day < cycleDay) fill = 1;
+                else if (day === cycleDay) fill = todayFraction;
+                else fill = 0;
             }
-            proceedToKey();
+
+            html += `<div class="streak-node-col" style="--fill:${fill};">
+                <div class="streak-thread"></div>
+                <div class="streak-node ${nodeClass}">${day}</div>
+                <div class="streak-node-bonus">${fmtBonus(bonus)}</div>
+            </div>`;
+        }
+        stripEl.innerHTML = html;
+
+        if (!systemEnabled) {
+            footEl.textContent = '';
+        } else if (!hasStreak) {
+            footEl.innerHTML = `Unlock today to start your streak — Day 2 unlocks <b>${fmtBonus(bonusMap[2] != null ? bonusMap[2] : DEFAULT_BONUS[2])}</b>.`;
+        } else if (cycleDay < 7) {
+            const nextBonus = bonusMap[cycleDay + 1] != null ? bonusMap[cycleDay + 1] : DEFAULT_BONUS[cycleDay + 1];
+            const currentBonus = bonusMap[cycleDay] != null ? bonusMap[cycleDay] : DEFAULT_BONUS[cycleDay];
+            footEl.innerHTML = direction === 'down'
+                ? `Cooldown day <b>${cycleDay}</b> — today's key: <b>${fmtBonus(currentBonus)}</b>.`
+                : `Day <b>${cycleDay}</b> — keep it going, tomorrow unlocks <b>${fmtBonus(nextBonus)}</b>.`;
+        } else {
+            footEl.innerHTML = `Peak streak — today's key: <b>${fmtBonus(bonusMap[7] != null ? bonusMap[7] : DEFAULT_BONUS[7])}</b>. Cooldown starts tomorrow.`;
         }
     }
 
-    function proceedToKey() {
-        switchScreen('mainContainer');
-        generateLockedKey();
-    }
-
-    async function generateLockedKey() {
+    async function initStreakStrip() {
         try {
-            document.getElementById('finalKey').innerText = "GENERATING...";
+            const [sysSnap, bonusSnap] = await Promise.all([
+                get(ref(db, 'settings/streakSystem')),
+                get(ref(db, 'settings/streakBonusMinutes'))
+            ]);
 
+            const sys = sysSnap.exists() ? sysSnap.val() : {};
+            const enabled = !!sys.enabled;
+            const resetHour = Number.isFinite(sys.resetHour) ? sys.resetHour : 4;
+
+            const bonusRaw = bonusSnap.exists() ? bonusSnap.val() : {};
+            const bonusMap = {};
+            for (let d = 1; d <= 7; d++) {
+                const v = bonusRaw[String(d)];
+                bonusMap[d] = Number.isFinite(v) ? v : DEFAULT_BONUS[d];
+            }
+
+            if (!enabled) {
+                // System off — hide the whole strip rather than showing a
+                // dead/unlit chart that implies a feature the admin has
+                // turned off entirely.
+                const wrap = document.getElementById('streakStripWrap');
+                if (wrap) wrap.style.display = 'none';
+                return;
+            }
+
+            let streak = null;
             const deviceId = localStorage.getItem('dgxen_device_id');
-            if(!deviceId) { location.reload(); return; }
+            if (deviceId) {
+                const streakSnap = await get(ref(db, 'users/' + deviceId + '/streak'));
+                if (streakSnap.exists()) streak = streakSnap.val();
+            }
 
-            import('https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js').then(async (module) => {
-                const { ref, get, update } = module;
-
-                const settingsSnap = await get(ref(db, 'settings/keyExpiryHours'));
-                const expiryHours = settingsSnap.exists() ? settingsSnap.val() : 24;
-
-                const userRef = ref(db, 'users/' + deviceId);
-                const userSnap = await get(userRef);
-                
-                if (userSnap.exists()) {
-                    const userData = userSnap.val();
-                    const now = Date.now();
-
-                    if (userData.lastGeneratedKey && userData.keyExpiresAt && now < userData.keyExpiresAt) {
-                        displayKeyInfo(userData.lastGeneratedKey, userData.keyExpiresAt, expiryHours);
-                        return;
-                    }
-                    
-                    const newKey = "DGXEN-" + 
-                        Math.random().toString(36).substring(2,6).toUpperCase() + "-" + 
-                        Math.random().toString(36).substring(2,6).toUpperCase() + "-" + 
-                        Math.random().toString(36).substring(2,6).toUpperCase() + "-" + 
-                        Math.random().toString(36).substring(2,6).toUpperCase();
-                    
-                    const expiresAt = now + (expiryHours * 60 * 60 * 1000);
-                    
-                    await update(userRef, { lastGeneratedKey: newKey, keyExpiresAt: expiresAt, keyGeneratedAt: now });
-                    displayKeyInfo(newKey, expiresAt, expiryHours);
-
-                    // Only ever write a log entry here when generation is
-                    // flagged as suspiciously fast — a normal generation
-                    // creates no log at all now, matching the requirement
-                    // that Share/User Logs shows exactly two things: share/
-                    // re-use attempts (written separately, in login.html)
-                    // and fast-generation flags (written here). This is
-                    // still the one point every key generation passes
-                    // through regardless of whether it's ever later
-                    // shared/used, so it's the only reliable place to
-                    // catch fast generation for every case ("any method,
-                    // legitimate or fake") — login.html's own share-log
-                    // write only fires when a DIFFERENT device later uses
-                    // this key, never for a generator's own first login.
-                    try {
-                        const { set: fbSet } = module;
-                        const nameSetAt = userData.nameSetAt;
-                        const fastGeneration = !!(nameSetAt && (now - Number(nameSetAt)) < 60000 && now >= Number(nameSetAt));
-                        if (fastGeneration) {
-                            const genLogKey = deviceId.replace(/[.#$\[\]\/]/g, '_') + '_' + now;
-                            await fbSet(ref(db, 'settings/shareLogs/' + genLogKey), {
-                                generatorName: userData.name || 'Unknown Generator',
-                                generatorId: deviceId,
-                                key: newKey,
-                                receiverName: null,
-                                receiverDevice: null,
-                                receiverFingerprint: null,
-                                timestamp: now,
-                                type: 'generation',
-                                fastGeneration: true
-                            });
-                        }
-                    } catch (e) { console.warn('generation log write failed', e); }
-                } else {
-                    localStorage.removeItem('dgxen_device_id');
-                    location.reload();
-                }
-            }).catch(err => {
-                document.getElementById('finalKey').innerText = "DB CONNECTION ERROR";
-            });
-
-        } catch (err) {
-            document.getElementById('finalKey').innerText = "ERROR FETCHING KEY";
+            renderStreakStrip(streak, bonusMap, resetHour, true);
+        } catch (e) {
+            // Any Firebase hiccup — fail quiet by hiding the strip rather
+            // than showing a broken/half-lit chart.
+            const wrap = document.getElementById('streakStripWrap');
+            if (wrap) wrap.style.display = 'none';
         }
     }
 
-    function displayKeyInfo(key, expiresAt, hours) {
-        // Start the boot overlay's fade-out first, then populate/reveal
-        // the actual key 500ms later — so the overlay is already gone by
-        // the time the key appears, rather than both happening at once.
-        // The overlay disappearing a half-second ahead of the reveal
-        // reads as the loading state leading into the result, instead of
-        // the two events feeling simultaneous/reactive.
-        if (window.hideBootOverlay) window.hideBootOverlay();
-        setTimeout(function() {
-            document.getElementById('finalKey').innerText = key;
-            const expiryDate = new Date(expiresAt);
-            const timeString = expiryDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-
-            let expiryText = document.getElementById('expiryTextInfo');
-            if(!expiryText) {
-                expiryText = document.createElement('p');
-                expiryText.id = 'expiryTextInfo';
-                expiryText.style = "color: #ffae00; font-size: 13px; font-weight: bold; margin: 12px 0 0; letter-spacing: 0.5px; position: relative; z-index: 2;";
-                const keyElement = document.getElementById('finalKey');
-                if(keyElement && keyElement.parentElement) keyElement.parentElement.appendChild(expiryText);
-            }
-            expiryText.innerHTML = `⏳ Valid for ${hours} Hours (Expires at ${timeString})`;
-        }, 500);
-    }
-
-    document.getElementById('copyBtn').addEventListener('click', () => {
-        const keyText = document.getElementById('finalKey').innerText;
-        if(keyText.includes("SECURE") || keyText.includes("ERROR") || keyText.includes("GENERATING")) return;
-
-        navigator.clipboard.writeText(keyText).then(() => {
-            const btn = document.getElementById('copyBtn');
-            btn.innerText = "COPIED SUCCESSFULLY! ✅";
-            btn.classList.add('btn-success');
-            setTimeout(() => { 
-                btn.innerText = "COPY TO CLIPBOARD"; 
-                btn.classList.remove('btn-success');
-            }, 2000);
-        });
-    });
-
-    document.getElementById('returnBtn').addEventListener('click', () => { location.href = 'steps.html'; });
-
-    const footerText = document.querySelector('.footer');
-    if(footerText) {
-        let webTimer;
-        footerText.addEventListener('touchstart', (e) => {
-            webTimer = setTimeout(() => {
-                const realId = localStorage.getItem('dgxen_device_id');
-                if(realId) {
-                    navigator.clipboard.writeText(realId).then(() => { alert("Real Device ID Copied for Admin:\n" + realId); });
-                } else { alert("No Device ID found."); }
-                e.preventDefault();
-            }, 1200);
-        });
-        footerText.addEventListener('touchend', () => clearTimeout(webTimer));
-        footerText.addEventListener('touchmove', () => clearTimeout(webTimer));
-    }
-
-    window.onload = function() {
-        // Safety net: if verifyAndRun() throws anything unexpected (a
-        // Firebase/network failure that escapes its own try/catch, etc.),
-        // fall back to the bypass screen instead of leaving every
-        // .screen-container at its default display:none forever — a
-        // silent blank page with no error shown, which is what a
-        // failed/crashed verifyAndRun() used to look like.
-        Promise.resolve(verifyAndRun()).catch(() => {
-            try { switchScreen('bypassContainer'); } catch (e) {}
-        });
-    };
+    initStreakStrip();
 </script>
+
+<script>
+    // vplink.in occasionally takes a long time to respond to a cold
+    // request (seen as the browser's own "This site can't be reached /
+    // ERR_CONNECTION_TIMED_OUT" page) — a plain location.href navigation
+    // has no way to recover from that; the person lands on a dead browser
+    // error page and has to realize themselves that going back and
+    // tapping the button again is what fixes it. This does that retry
+    // automatically instead: before actually navigating, it pings vplink
+    // with a short-timeout fetch (no-cors, so it works even though we
+    // can't read the response — a settled fetch either way just proves
+    // the connection didn't hang) and retries a couple of times on
+    // failure, falling back to a normal navigation attempt either way so
+    // a person is never stuck with no working button.
+    const VPLINK_URL = 'https://vplink.in/getkey';
+    const VPLINK_PING_URL = 'https://vplink.in/';
+    const MAX_ATTEMPTS = 3;
+    const PING_TIMEOUT_MS = 4000;
+
+    function pingVplink() {
+        return new Promise((resolve) => {
+            const controller = new AbortController();
+            const timer = setTimeout(() => { controller.abort(); }, PING_TIMEOUT_MS);
+            fetch(VPLINK_PING_URL, { mode: 'no-cors', cache: 'no-store', signal: controller.signal })
+                .then(() => { clearTimeout(timer); resolve(true); })
+                .catch(() => { clearTimeout(timer); resolve(false); });
+        });
+    }
+
+    async function goToVplink() {
+        const btn = document.getElementById('continueBtn');
+        const note = document.getElementById('vplinkRetryNote');
+        btn.disabled = true;
+        btn.style.opacity = '0.75';
+        btn.style.cursor = 'default';
+
+        for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+            btn.innerText = attempt === 1 ? 'CONNECTING…' : `RETRYING… (${attempt}/${MAX_ATTEMPTS})`;
+            if (note) {
+                note.style.display = attempt > 1 ? 'block' : 'none';
+                note.innerText = attempt > 1 ? 'vplink.in is slow to respond — retrying automatically…' : '';
+            }
+
+            const ok = await pingVplink();
+            if (ok || attempt === MAX_ATTEMPTS) {
+                // Either it's reachable, or we've retried enough — go for
+                // real navigation either way rather than stalling forever
+                // (a false-negative ping should never trap the person).
+                location.href = VPLINK_URL;
+                return;
+            }
+            // Small pause before the next attempt so we're not hammering
+            // a server that's already slow to respond.
+            await new Promise((r) => setTimeout(r, 900));
+        }
+    }
+</script>
+
 </body>
 </html>
+
