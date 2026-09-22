@@ -434,16 +434,12 @@
     // Advances (or resets) a streak record for "today" having just been
     // reached for the first time this reset-window. Pure function — takes
     // the previous streak object (or null/undefined for a device with no
-    // streak yet), today's/yesterday's date-keys, and who's triggering
-    // this tick, returns the next streak object. Never called more than
-    // once per reset-window per device (callers check lastUnlockDate
-    // first). masterInfo, if provided, is {isMasterUser, masterKeyUsed}
-    // — omit it (or pass null) for a normal key-generation tick.
-    function streakAdvance(prevStreak, todayKey, yesterdayKey, masterInfo) {
+    // streak yet) and today's/yesterday's date-keys, returns the next
+    // streak object. Never called more than once per reset-window per
+    // device (callers check lastUnlockDate first).
+    function streakAdvance(prevStreak, todayKey, yesterdayKey) {
         const prev = prevStreak || {};
         const wasContinuing = prev.lastUnlockDate === yesterdayKey && Number(prev.lifetimeDays) >= 1;
-        const isMasterUser = !!(masterInfo && masterInfo.isMasterUser);
-        const masterKeyUsed = (masterInfo && masterInfo.masterKeyUsed) || null;
 
         if (!wasContinuing) {
             // Fresh start (either truly new, or the streak broke — a gap
@@ -455,8 +451,8 @@
                 lastUnlockDate: todayKey,
                 pendingBonusAvailable: false,
                 pendingBonusMinutes: 0,
-                isMasterUser,
-                masterKeyUsed
+                isMasterUser: false,
+                masterKeyUsed: null
             };
         }
 
@@ -478,8 +474,8 @@
             lastUnlockDate: todayKey,
             pendingBonusAvailable: false,
             pendingBonusMinutes: 0,
-            isMasterUser,
-            masterKeyUsed
+            isMasterUser: false,
+            masterKeyUsed: null
         };
     }
 
