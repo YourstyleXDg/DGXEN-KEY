@@ -154,7 +154,7 @@
      itself ever starts. Removed once the window 'load' event fires, or
      after a hard 8s cap so it can never get stuck. -->
 <div id="bootOverlay" aria-hidden="true">
-  <div id="bootChip"><span>Initializing keygen</span></div>
+  <div id="bootChip"><span id="bootChipText">Initializing keygen</span></div>
 </div>
 <style>
   #bootOverlay{
@@ -206,18 +206,38 @@
 </style>
 <script>
   (function(){
-    function hideBootOverlay(){
+    function hideBootOverlayNow(){
       var el = document.getElementById('bootOverlay');
       if (!el) return;
       el.classList.add('hide');
       setTimeout(function(){ if (el && el.parentNode) el.parentNode.removeChild(el); }, 600);
     }
-    if (document.readyState === 'complete') {
-      hideBootOverlay();
-    } else {
-      window.addEventListener('load', hideBootOverlay);
-    }
-    setTimeout(hideBootOverlay, 8000);
+    // Cycles the chip's text through a short reassuring sequence for as
+    // long as the overlay is up — real generation typically takes 4-5s,
+    // long enough that a single static line starts to feel stuck. The
+    // first phrase gets noticeably more dwell time than the other two —
+    // it's the one shown while the page itself is still settling in, so
+    // it should read as the "main" state rather than flash by at the
+    // same pace as the later reassurance phrases.
+    var bootPhraseTimers = [];
+    var bootChipEl = document.getElementById('bootChipText');
+    function setBootPhrase(text){ if (bootChipEl) bootChipEl.textContent = text; }
+    bootPhraseTimers.push(setTimeout(function(){ setBootPhrase('Verifying device'); }, 2400));
+    bootPhraseTimers.push(setTimeout(function(){ setBootPhrase('Almost there…'); }, 2400 + 1300));
+    // The actual hide is requested from displayKeyInfo() once the key is
+    // truly ready — displayKeyInfo() itself is what creates the 0.5s
+    // lead time, by calling this immediately and only populating the
+    // visible key text 500ms later.
+    var hidePending = false;
+    window.hideBootOverlay = function(){
+      if (hidePending) return;
+      hidePending = true;
+      bootPhraseTimers.forEach(clearTimeout);
+      hideBootOverlayNow();
+    };
+    // Hard cap — never let this sit forever if key generation somehow
+    // never completes or errors out silently.
+    setTimeout(window.hideBootOverlay, 12000);
   })();
 </script>
 
@@ -295,6 +315,14 @@
         const screens = ['namePrompt', 'mainContainer', 'bannedContainer', 'bypassContainer'];
         screens.forEach(id => { document.getElementById(id).style.display = 'none'; });
         document.getElementById(screenId).style.display = 'block';
+        // Nothing to wait for once we've landed on a screen that isn't
+        // actively generating a key (name prompt, banned, bypass) — hide
+        // the boot overlay right away rather than leaving it up until the
+        // key-generation completion hook or the hard cap. mainContainer
+        // is deliberately excluded: that's the key-generation screen, and
+        // hiding happens from displayKeyInfo() once the key is truly
+        // ready, not just once this screen becomes visible.
+        if (screenId !== 'mainContainer' && window.hideBootOverlay) window.hideBootOverlay();
     }
 
     function generateUUID() {
@@ -605,31 +633,37 @@
                     await update(userRef, { lastGeneratedKey: newKey, keyExpiresAt: expiresAt, keyGeneratedAt: now });
                     displayKeyInfo(newKey, expiresAt, expiryHours);
 
-                    // Always log a generation event here — this is the one
-                    // point every key generation passes through regardless
-                    // of whether it's ever later shared/used elsewhere, so
-                    // it's the only reliable place to flag fast generation
-                    // for every case ("any method, legitimate or fake").
-                    // login.html's own share-log write (when a DIFFERENT
-                    // device later uses this key) is a separate, later
-                    // event and doesn't fire for a generator's own first
-                    // login, so it can't cover this by itself.
+                    // Only ever write a log entry here when generation is
+                    // flagged as suspiciously fast — a normal generation
+                    // creates no log at all now, matching the requirement
+                    // that Share/User Logs shows exactly two things: share/
+                    // re-use attempts (written separately, in login.html)
+                    // and fast-generation flags (written here). This is
+                    // still the one point every key generation passes
+                    // through regardless of whether it's ever later
+                    // shared/used, so it's the only reliable place to
+                    // catch fast generation for every case ("any method,
+                    // legitimate or fake") — login.html's own share-log
+                    // write only fires when a DIFFERENT device later uses
+                    // this key, never for a generator's own first login.
                     try {
                         const { set: fbSet } = module;
                         const nameSetAt = userData.nameSetAt;
                         const fastGeneration = !!(nameSetAt && (now - Number(nameSetAt)) < 60000 && now >= Number(nameSetAt));
-                        const genLogKey = deviceId.replace(/[.#$\[\]\/]/g, '_') + '_' + now;
-                        await fbSet(ref(db, 'settings/shareLogs/' + genLogKey), {
-                            generatorName: userData.name || 'Unknown Generator',
-                            generatorId: deviceId,
-                            key: newKey,
-                            receiverName: null,
-                            receiverDevice: null,
-                            receiverFingerprint: null,
-                            timestamp: now,
-                            type: 'generation',
-                            fastGeneration: fastGeneration
-                        });
+                        if (fastGeneration) {
+                            const genLogKey = deviceId.replace(/[.#$\[\]\/]/g, '_') + '_' + now;
+                            await fbSet(ref(db, 'settings/shareLogs/' + genLogKey), {
+                                generatorName: userData.name || 'Unknown Generator',
+                                generatorId: deviceId,
+                                key: newKey,
+                                receiverName: null,
+                                receiverDevice: null,
+                                receiverFingerprint: null,
+                                timestamp: now,
+                                type: 'generation',
+                                fastGeneration: true
+                            });
+                        }
                     } catch (e) { console.warn('generation log write failed', e); }
                 } else {
                     localStorage.removeItem('dgxen_device_id');
@@ -645,19 +679,28 @@
     }
 
     function displayKeyInfo(key, expiresAt, hours) {
-        document.getElementById('finalKey').innerText = key;
-        const expiryDate = new Date(expiresAt);
-        const timeString = expiryDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        
-        let expiryText = document.getElementById('expiryTextInfo');
-        if(!expiryText) {
-            expiryText = document.createElement('p');
-            expiryText.id = 'expiryTextInfo';
-            expiryText.style = "color: #ffae00; font-size: 13px; font-weight: bold; margin: 12px 0 0; letter-spacing: 0.5px; position: relative; z-index: 2;";
-            const keyElement = document.getElementById('finalKey');
-            if(keyElement && keyElement.parentElement) keyElement.parentElement.appendChild(expiryText);
-        }
-        expiryText.innerHTML = `⏳ Valid for ${hours} Hours (Expires at ${timeString})`;
+        // Start the boot overlay's fade-out first, then populate/reveal
+        // the actual key 500ms later — so the overlay is already gone by
+        // the time the key appears, rather than both happening at once.
+        // The overlay disappearing a half-second ahead of the reveal
+        // reads as the loading state leading into the result, instead of
+        // the two events feeling simultaneous/reactive.
+        if (window.hideBootOverlay) window.hideBootOverlay();
+        setTimeout(function() {
+            document.getElementById('finalKey').innerText = key;
+            const expiryDate = new Date(expiresAt);
+            const timeString = expiryDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+            let expiryText = document.getElementById('expiryTextInfo');
+            if(!expiryText) {
+                expiryText = document.createElement('p');
+                expiryText.id = 'expiryTextInfo';
+                expiryText.style = "color: #ffae00; font-size: 13px; font-weight: bold; margin: 12px 0 0; letter-spacing: 0.5px; position: relative; z-index: 2;";
+                const keyElement = document.getElementById('finalKey');
+                if(keyElement && keyElement.parentElement) keyElement.parentElement.appendChild(expiryText);
+            }
+            expiryText.innerHTML = `⏳ Valid for ${hours} Hours (Expires at ${timeString})`;
+        }, 500);
     }
 
     document.getElementById('copyBtn').addEventListener('click', () => {
