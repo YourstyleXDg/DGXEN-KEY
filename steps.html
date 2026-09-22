@@ -27,7 +27,7 @@
             font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             display: flex; 
             justify-content: center; 
-            align-items: flex-start; 
+            align-items: center; 
             min-height: 100svh; 
             margin: 0; 
             padding: 20px;
@@ -100,100 +100,6 @@
         h2 { font-size: 22px; margin-bottom: 12px; color: #fff; font-weight: 800; letter-spacing: .3px; position: relative; z-index: 2; display: flex; align-items: center; gap: 8px;}
         .card-p { color: var(--muted); font-size: 14.5px; line-height: 1.6; margin-bottom: 25px; position: relative; z-index: 2;}
 
-        /* ============================================================
-           STREAK FLOW CHART — small horizontal Day 1-7 strip shown
-           above "Unlock Access". Always visible (even at zero streak,
-           per spec — everyone sees the chart, it's just unlit for a
-           new user); the only thing that changes is how far the
-           glowing thread has traveled and which day-node is lit.
-           ============================================================ */
-        .streak-strip-wrap {
-            position: relative; z-index: 2; margin-bottom: 28px;
-            padding: 18px 16px 16px;
-            border-radius: 20px;
-            background: linear-gradient(160deg, rgba(255,210,60,.055), rgba(255,255,255,.02) 65%);
-            border: 1px solid rgba(255,210,60,.16);
-            cursor: pointer;
-            transition: border-color .25s ease, background .25s ease, transform .15s ease;
-        }
-        .streak-strip-wrap:active { transform: scale(0.985); }
-        .streak-strip-wrap:hover { border-color: rgba(255,210,60,.32); background: linear-gradient(160deg, rgba(255,210,60,.08), rgba(255,255,255,.025) 65%); }
-        .streak-strip-tap-hint {
-            display: flex; align-items: center; justify-content: center; gap: 5px;
-            font-size: 9.5px; font-weight: 700; color: rgba(255,255,255,.3);
-            margin-top: 12px; letter-spacing: .03em; text-transform: uppercase;
-        }
-        .streak-strip-tap-hint svg { width: 10px; height: 10px; }
-        .streak-strip-label {
-            display: flex; align-items: center; justify-content: space-between;
-            font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
-            color: var(--muted); margin-bottom: 14px;
-        }
-        .streak-strip-label .streak-lifetime {
-            display: flex; align-items: center; gap: 5px;
-            color: #ffd23c; font-weight: 900;
-        }
-        .streak-strip-label .streak-lifetime svg { width: 12px; height: 12px; }
-
-        .streak-strip {
-            display: flex; align-items: center; gap: 0; position: relative;
-            padding: 4px 0;
-        }
-        .streak-node-col { display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 0; position: relative; }
-        .streak-node {
-            width: 28px; height: 28px; border-radius: 50%; flex: none;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 11.5px; font-weight: 900; color: rgba(255,255,255,.35);
-            background: rgba(255,255,255,.05); border: 1.5px solid rgba(255,255,255,.12);
-            position: relative; z-index: 2; transition: transform .3s ease;
-        }
-        .streak-node.done { color: #0a0a08; background: linear-gradient(135deg,#ffd23c,#ff9a1a); border-color: transparent; box-shadow: 0 0 10px rgba(255,170,30,.4); }
-        .streak-node.current {
-            color: #0a0a08; background: linear-gradient(135deg,#fff2c4,#ffd23c);
-            border-color: transparent; transform: scale(1.18);
-            box-shadow: 0 0 0 3px rgba(255,210,60,.18), 0 0 18px rgba(255,190,40,.65);
-            animation: streakNodePulse 2.1s ease-in-out infinite;
-        }
-        @keyframes streakNodePulse {
-            0%,100% { box-shadow: 0 0 0 3px rgba(255,210,60,.18), 0 0 18px rgba(255,190,40,.65); }
-            50% { box-shadow: 0 0 0 6px rgba(255,210,60,.1), 0 0 26px rgba(255,190,40,.85); }
-        }
-
-        .streak-node-bonus {
-            font-size: 8.5px; font-weight: 800; color: var(--muted); margin-top: 5px;
-            white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis;
-        }
-        .streak-node.done ~ .streak-node-bonus, .streak-node-col:has(.streak-node.done) .streak-node-bonus { color: rgba(255,210,90,.75); }
-        .streak-node-col:has(.streak-node.current) .streak-node-bonus { color: #ffd23c; font-weight: 900; }
-
-        /* The connecting thread between node centers. Each segment sits
-           behind its pair of nodes (z-index 1) and is itself a two-layer
-           bar: a dim base track (always visible, every user sees the
-           full 1-7 path) plus a bright glow-fill whose width is set
-           per-segment via --fill (0 to 1) — 0 = not reached yet, 1 =
-           fully completed to the next node, a fractional value = the
-           user is partway *through* the current day (time elapsed since
-           today's unlock / until reset), which is what makes the glow
-           visibly creep forward within a day rather than only jumping
-           on whole-day boundaries. */
-        .streak-thread { position: absolute; top: 13px; left: 50%; right: -50%; height: 3px; z-index: 1; border-radius: 3px; background: rgba(255,255,255,.08); }
-        .streak-thread::after {
-            content: ""; position: absolute; inset: 0; border-radius: 3px;
-            width: calc(var(--fill, 0) * 100%);
-            background: linear-gradient(90deg, #ff9a1a, #ffd23c);
-            box-shadow: 0 0 8px rgba(255,190,40,.8);
-            transition: width .6s cubic-bezier(.4,0,.2,1);
-        }
-        .streak-node-col:last-child .streak-thread { display: none; }
-
-        .streak-strip-foot {
-            margin-top: 16px; font-size: 11.5px; color: var(--muted); text-align: center;
-            font-weight: 600; padding: 9px 12px; border-radius: 12px;
-            background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.06);
-        }
-        .streak-strip-foot:empty { display: none; }
-        .streak-strip-foot b { color: #ffd23c; font-weight: 800; }
-
         .warning { 
             background: var(--warning-bg); border: 1px solid var(--warning-border); 
             border-radius: 16px; padding: 16px; display: flex; gap: 14px; margin-bottom: 25px; 
@@ -213,21 +119,6 @@
         }
         .btn:hover { background: var(--accent); box-shadow: 0 10px 30px rgba(0,255,136,.32); transform: translateY(-2px); }
         .btn:active { transform: translateY(0) scale(0.975); }
-
-        @keyframes futuristicGlowPulse {
-            0%, 100% {
-                box-shadow: 0 10px 28px rgba(0,0,0,.38), inset 0 1px #fff, 0 0 0 rgba(0,255,136,0);
-                transform: scale(1);
-            }
-            50% {
-                box-shadow: 0 10px 28px rgba(0,0,0,.38), inset 0 1px #fff,
-                    0 0 36px 6px rgba(0,255,136,.75), 0 0 70px 18px rgba(0,255,136,.3);
-                transform: scale(1.015);
-            }
-        }
-        .btn.glow-attention {
-            animation: futuristicGlowPulse .9s ease-in-out 3;
-        }
     </style>
 </head>
 <body>
@@ -250,22 +141,6 @@
 
     <div class="glass-card">
         <div class="glass-glare"></div>
-
-        <div class="streak-strip-wrap" id="streakStripWrap" onclick="scrollToContinueWithGlow()">
-            <div class="streak-strip-label">
-                <span>Streak Progress</span>
-                <span class="streak-lifetime" id="streakLifetimeTag" style="display:none;">
-                    <svg viewBox="0 0 24 24" fill="#ffd23c" stroke="none"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
-                    <span id="streakLifetimeNum">0</span> day streak
-                </span>
-            </div>
-            <div class="streak-strip" id="streakStrip"></div>
-            <div class="streak-strip-foot" id="streakStripFoot"></div>
-            <div class="streak-strip-tap-hint">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
-                Tap to continue
-            </div>
-        </div>
 
         <h2>Unlock Access</h2>
         <p class="card-p">To continue, click the button below to complete the first step. You will be automatically redirected to your key once finished.</p>
@@ -294,223 +169,6 @@
     </div>
 </div>
 
-<script type="module">
-    // ============================================================
-    // STREAK FLOW CHART — reads this device's streak record (written
-    // by index.html at key-generation time — this page never writes
-    // streak fields, only displays them) and the admin-configured
-    // bonus-minutes table, then renders the Day 1-7 strip above
-    // "Unlock Access".
-    //
-    // Shown to EVERY visitor, streak or no streak — a brand-new device
-    // sees the same 1-7 chart, just fully unlit (node 1 is the only one
-    // faintly marked as "start", no glow thread yet). This matches the
-    // spec: the chart itself is always visible; only its lit state
-    // differs per user.
-    //
-    // Schema read here (all read-only):
-    //   settings/streakSystem/{enabled,resetHour}
-    //   settings/streakBonusMinutes/"1".."7"
-    //   users/<deviceId>/streak/{lifetimeDays,cycleDay,cycleDirection,
-    //                            lastUnlockDate}
-    // ============================================================
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-    const firebaseConfig = { databaseURL: "https://login-pass-1a196-default-rtdb.firebaseio.com/" };
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    const DEFAULT_BONUS = { 1: 0, 2: 20, 3: 40, 4: 60, 5: 80, 6: 120, 7: 180 };
-
-    // Clean duration formatting: whole hours show as "1h"/"2h"/"3h" instead
-    // of "60m"/"120m"/"180m"; a value that isn't a clean multiple of 60
-    // (e.g. 20, 80) still reads naturally as "20m" / "1h 20m".
-    function fmtDuration(mins) {
-        const h = Math.floor(mins / 60);
-        const m = mins % 60;
-        if (h > 0 && m > 0) return `${h}h ${m}m`;
-        if (h > 0) return `${h}h`;
-        return `${m}m`;
-    }
-    function fmtBonus(mins) {
-        return mins > 0 ? `4h + ${fmtDuration(mins)}` : '4h';
-    }
-
-    // How far into the CURRENT day's window we are, as a 0..1 fraction,
-    // measured between the last reset-hour boundary and the next one.
-    // This is what lets the glow thread creep forward smoothly through
-    // the day rather than only jumping once every 24h — e.g. sitting at
-    // 60% of the way to the reset hour shows the thread 60% of the way
-    // into the current day's segment.
-    function currentDayProgressFraction(resetHour) {
-        const now = new Date();
-        const boundaryToday = new Date(now);
-        boundaryToday.setHours(resetHour, 0, 0, 0);
-        let windowStart;
-        if (now >= boundaryToday) {
-            windowStart = boundaryToday;
-        } else {
-            windowStart = new Date(boundaryToday);
-            windowStart.setDate(windowStart.getDate() - 1);
-        }
-        const windowEnd = new Date(windowStart);
-        windowEnd.setDate(windowEnd.getDate() + 1);
-        const total = windowEnd - windowStart;
-        const elapsed = now - windowStart;
-        return Math.max(0, Math.min(1, elapsed / total));
-    }
-
-    function renderStreakStrip(streak, bonusMap, resetHour, systemEnabled) {
-        const stripEl = document.getElementById('streakStrip');
-        const footEl = document.getElementById('streakStripFoot');
-        const lifetimeTag = document.getElementById('streakLifetimeTag');
-        const lifetimeNum = document.getElementById('streakLifetimeNum');
-        if (!stripEl) return;
-
-        const hasStreak = systemEnabled && streak && Number(streak.lifetimeDays) >= 1;
-        const cycleDay = hasStreak ? Math.max(1, Math.min(7, Number(streak.cycleDay) || 1)) : 0;
-        const direction = streak && streak.cycleDirection === 'down' ? 'down' : 'up';
-
-        if (hasStreak) {
-            lifetimeTag.style.display = 'flex';
-            lifetimeNum.textContent = String(streak.lifetimeDays);
-        } else {
-            lifetimeTag.style.display = 'none';
-        }
-
-        // Within-day progress only matters for the segment leading INTO
-        // the current day (i.e. how "used up" today is) — every segment
-        // before it is fully lit (1), every segment after is unlit (0).
-        const todayFraction = hasStreak ? currentDayProgressFraction(resetHour) : 0;
-
-        let html = '';
-        for (let day = 1; day <= 7; day++) {
-            const bonus = bonusMap[day] != null ? bonusMap[day] : DEFAULT_BONUS[day];
-            const isDone = hasStreak && day < cycleDay;
-            const isCurrent = hasStreak && day === cycleDay;
-            const nodeClass = isCurrent ? 'current' : (isDone ? 'done' : '');
-
-            // Thread fill for the segment that starts at THIS node and
-            // runs to the next one:
-            //   - fully before current day → 1 (complete)
-            //   - the current day's own outgoing segment → today's
-            //     elapsed-time fraction (this is the "glow creeps
-            //     forward with time, not just on whole days" part)
-            //   - anything after → 0
-            let fill = 0;
-            if (hasStreak) {
-                if (day < cycleDay) fill = 1;
-                else if (day === cycleDay) fill = todayFraction;
-                else fill = 0;
-            }
-
-            html += `<div class="streak-node-col" style="--fill:${fill};">
-                <div class="streak-thread"></div>
-                <div class="streak-node ${nodeClass}">${day}</div>
-                <div class="streak-node-bonus">${fmtBonus(bonus)}</div>
-            </div>`;
-        }
-        stripEl.innerHTML = html;
-
-        if (!systemEnabled) {
-            footEl.textContent = '';
-        } else if (!hasStreak) {
-            footEl.innerHTML = `Unlock today to start your streak — Day 2 unlocks <b>${fmtBonus(bonusMap[2] != null ? bonusMap[2] : DEFAULT_BONUS[2])}</b>.`;
-        } else if (cycleDay < 7) {
-            const nextBonus = bonusMap[cycleDay + 1] != null ? bonusMap[cycleDay + 1] : DEFAULT_BONUS[cycleDay + 1];
-            const currentBonus = bonusMap[cycleDay] != null ? bonusMap[cycleDay] : DEFAULT_BONUS[cycleDay];
-            footEl.innerHTML = direction === 'down'
-                ? `Cooldown day <b>${cycleDay}</b> — today's key: <b>${fmtBonus(currentBonus)}</b>.`
-                : `Day <b>${cycleDay}</b> — keep it going, tomorrow unlocks <b>${fmtBonus(nextBonus)}</b>.`;
-        } else {
-            footEl.innerHTML = `Peak streak — today's key: <b>${fmtBonus(bonusMap[7] != null ? bonusMap[7] : DEFAULT_BONUS[7])}</b>. Cooldown starts tomorrow.`;
-        }
-    }
-
-    // ------------------------------------------------------------------
-    // Cache layer — purely additive, doesn't change any of the fetch or
-    // render logic below. Because the pic + flow chart were arriving with
-    // a visible delay while Firebase resolved, we paint instantly from
-    // whatever was last seen (via the exact same renderStreakStrip used
-    // for the real data, so it's never an approximation), then let the
-    // real fetch below run exactly as it already did and simply save its
-    // result for next time.
-    // ------------------------------------------------------------------
-    const STREAK_CACHE_KEY = 'dgxen_streak_cache_v1';
-
-    function paintStreakFromCache() {
-        try {
-            const raw = localStorage.getItem(STREAK_CACHE_KEY);
-            if (!raw) return;
-            const cached = JSON.parse(raw);
-            if (!cached || !cached.enabled) {
-                const wrap = document.getElementById('streakStripWrap');
-                if (wrap && cached && cached.enabled === false) wrap.style.display = 'none';
-                return;
-            }
-            renderStreakStrip(cached.streak, cached.bonusMap, cached.resetHour, true);
-        } catch (e) { /* corrupt/old cache shape — ignore, real fetch below will populate it */ }
-    }
-
-    function saveStreakCache(data) {
-        try { localStorage.setItem(STREAK_CACHE_KEY, JSON.stringify(data)); } catch (e) {}
-    }
-
-    paintStreakFromCache();
-
-    async function initStreakStrip() {
-        try {
-            const [sysSnap, bonusSnap] = await Promise.all([
-                get(ref(db, 'settings/streakSystem')),
-                get(ref(db, 'settings/streakBonusMinutes'))
-            ]);
-
-            const sys = sysSnap.exists() ? sysSnap.val() : {};
-            const enabled = !!sys.enabled;
-            const resetHour = Number.isFinite(sys.resetHour) ? sys.resetHour : 4;
-
-            const bonusRaw = bonusSnap.exists() ? bonusSnap.val() : {};
-            const bonusMap = {};
-            for (let d = 1; d <= 7; d++) {
-                const v = bonusRaw[String(d)];
-                bonusMap[d] = Number.isFinite(v) ? v : DEFAULT_BONUS[d];
-            }
-
-            if (!enabled) {
-                // System off — hide the whole strip rather than showing a
-                // dead/unlit chart that implies a feature the admin has
-                // turned off entirely.
-                const wrap = document.getElementById('streakStripWrap');
-                if (wrap) wrap.style.display = 'none';
-                saveStreakCache({ enabled: false });
-                return;
-            }
-
-            let streak = null;
-            const deviceId = localStorage.getItem('dgxen_device_id');
-            if (deviceId) {
-                const streakSnap = await get(ref(db, 'users/' + deviceId + '/streak'));
-                if (streakSnap.exists()) streak = streakSnap.val();
-            }
-
-            renderStreakStrip(streak, bonusMap, resetHour, true);
-            saveStreakCache({ enabled: true, streak, bonusMap, resetHour });
-        } catch (e) {
-            // Any Firebase hiccup — fail quiet by hiding the strip rather
-            // than showing a broken/half-lit chart. If we already painted
-            // from cache above, leave that in place instead of hiding it —
-            // stale-but-real data beats hiding a chart the person just saw.
-            if (!localStorage.getItem(STREAK_CACHE_KEY)) {
-                const wrap = document.getElementById('streakStripWrap');
-                if (wrap) wrap.style.display = 'none';
-            }
-        }
-    }
-
-    initStreakStrip();
-</script>
-
 <script>
     // vplink.in occasionally takes a long time to respond to a cold
     // request (seen as the browser's own "This site can't be reached /
@@ -524,39 +182,6 @@
     // the connection didn't hang) and retries a couple of times on
     // failure, falling back to a normal navigation attempt either way so
     // a person is never stuck with no working button.
-    // Tapping the streak flow-chart smooth-scrolls the page down to the
-    // Continue button (a custom eased scroll for a more "fluid" feel than
-    // the browser's default smooth-scroll) and gives the button a brief
-    // futuristic glow pulse so it's obvious where attention should go next.
-    function easeInOutCubic(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
-
-    function fluidScrollTo(targetY, duration) {
-        const startY = window.scrollY;
-        const delta = targetY - startY;
-        const startTime = performance.now();
-        function step(now) {
-            const elapsed = Math.min(1, (now - startTime) / duration);
-            window.scrollTo(0, startY + delta * easeInOutCubic(elapsed));
-            if (elapsed < 1) requestAnimationFrame(step);
-        }
-        requestAnimationFrame(step);
-    }
-
-    function scrollToContinueWithGlow() {
-        const btn = document.getElementById('continueBtn');
-        if (!btn) return;
-        const rect = btn.getBoundingClientRect();
-        // Center the button in the viewport rather than just nudging it
-        // into view, so the motion itself feels deliberate.
-        const targetY = window.scrollY + rect.top - (window.innerHeight / 2) + (rect.height / 2);
-        fluidScrollTo(Math.max(0, targetY), 750);
-
-        btn.classList.remove('glow-attention');
-        void btn.offsetWidth; // restart the animation if it's already mid-pulse
-        btn.classList.add('glow-attention');
-        setTimeout(() => { btn.classList.remove('glow-attention'); }, 2800);
-    }
-
     const VPLINK_URL = 'https://vplink.in/getkey';
     const VPLINK_PING_URL = 'https://vplink.in/';
     const MAX_ATTEMPTS = 3;
