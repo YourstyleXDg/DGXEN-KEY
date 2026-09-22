@@ -154,7 +154,7 @@
      itself ever starts. Removed once the window 'load' event fires, or
      after a hard 8s cap so it can never get stuck. -->
 <div id="bootOverlay" aria-hidden="true">
-  <div id="bootChip"><span id="bootChipText">Initializing keygen</span></div>
+  <div id="bootChip"><span>Initializing keygen</span></div>
 </div>
 <style>
   #bootOverlay{
@@ -206,38 +206,18 @@
 </style>
 <script>
   (function(){
-    function hideBootOverlayNow(){
+    function hideBootOverlay(){
       var el = document.getElementById('bootOverlay');
       if (!el) return;
       el.classList.add('hide');
       setTimeout(function(){ if (el && el.parentNode) el.parentNode.removeChild(el); }, 600);
     }
-    // Cycles the chip's text through a short reassuring sequence for as
-    // long as the overlay is up — real generation typically takes 4-5s,
-    // long enough that a single static line starts to feel stuck. The
-    // first phrase gets noticeably more dwell time than the other two —
-    // it's the one shown while the page itself is still settling in, so
-    // it should read as the "main" state rather than flash by at the
-    // same pace as the later reassurance phrases.
-    var bootPhraseTimers = [];
-    var bootChipEl = document.getElementById('bootChipText');
-    function setBootPhrase(text){ if (bootChipEl) bootChipEl.textContent = text; }
-    bootPhraseTimers.push(setTimeout(function(){ setBootPhrase('Verifying device'); }, 2400));
-    bootPhraseTimers.push(setTimeout(function(){ setBootPhrase('Almost there…'); }, 2400 + 1300));
-    // The actual hide is requested from displayKeyInfo() once the key is
-    // truly ready — displayKeyInfo() itself is what creates the 0.5s
-    // lead time, by calling this immediately and only populating the
-    // visible key text 500ms later.
-    var hidePending = false;
-    window.hideBootOverlay = function(){
-      if (hidePending) return;
-      hidePending = true;
-      bootPhraseTimers.forEach(clearTimeout);
-      hideBootOverlayNow();
-    };
-    // Hard cap — never let this sit forever if key generation somehow
-    // never completes or errors out silently.
-    setTimeout(window.hideBootOverlay, 12000);
+    if (document.readyState === 'complete') {
+      hideBootOverlay();
+    } else {
+      window.addEventListener('load', hideBootOverlay);
+    }
+    setTimeout(hideBootOverlay, 8000);
   })();
 </script>
 
@@ -261,38 +241,12 @@
         <div class="glass-card">
             <div class="glass-glare"></div>
             <div class="key-icon"><img src="./assets/logo.png" alt="DGXEN" onerror="this.style.display='none'"></div>
-            <h2 id="mainHeading">Generation Success!</h2>
-            <p class="card-p" id="mainSubtext">One key - One login</p>
-
-            <!-- Streak key-type choice — shown only when this device is
-                 streak-eligible today and hasn't already committed to a
-                 choice (see chooseKeyType()/renderKeyChoiceUI() in the
-                 script below). Hidden the rest of the time; the normal
-                 key-box below is what's used everywhere else. -->
-            <div id="keyChoiceBox" style="display:none;">
-                <p id="keyChoiceStreakLine" style="color:#ffd23c;font-size:13px;font-weight:800;margin:0 0 18px;letter-spacing:.02em;"></p>
-                <div style="display:flex;flex-direction:column;gap:12px;">
-                    <button class="btn" id="chooseRegularBtn" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);">
-                        REGULAR KEY <span style="opacity:.65;font-weight:600;">— 4h</span>
-                    </button>
-                    <button class="btn" id="chooseBonusBtn" style="background:linear-gradient(135deg,#ffd23c,#ff9a1a);color:#1a0f00;">
-                        STREAK BONUS <span id="chooseBonusLabel" style="opacity:.75;font-weight:700;"></span>
-                    </button>
-                </div>
-                <p style="color:var(--muted);font-size:11.5px;margin:14px 0 0;line-height:1.5;">
-                    Tip: pick Regular now and come back for your Bonus key later today — it'll be waiting, as long as you claim it before reset.
-                </p>
+            <h2>Generation Success!</h2>
+            <p class="card-p">One key - One login</p>
+            <div class="key-box">
+                <span id="finalKey">SECURE FETCHING...</span>
             </div>
-
-            <div id="keyResultBox">
-                <div class="key-box">
-                    <span id="finalKey">SECURE FETCHING...</span>
-                </div>
-                <button class="btn" id="copyBtn">COPY TO CLIPBOARD</button>
-                <button class="btn" id="claimBonusLaterBtn" style="display:none;margin-top:10px;background:linear-gradient(135deg,#ffd23c,#ff9a1a);color:#1a0f00;">
-                    CLAIM STREAK BONUS <span id="claimBonusLaterLabel"></span>
-                </button>
-            </div>
+            <button class="btn" id="copyBtn">COPY TO CLIPBOARD</button>
         </div>
     </div>
 
@@ -336,161 +290,11 @@
     // below for why this moved server-side). Keep this in sync with
     // wherever worker.js is actually deployed.
     const WORKER_CONSUME_URL = "https://dgxen-ai-bot.akkumsgsjshjwej.workers.dev/consume";
-    const WORKER_STREAK_SUBSCRIBE_URL = "https://dgxen-ai-bot.akkumsgsjshjwej.workers.dev/streak-subscribe";
-
-    // ============================================================
-    // STREAK ELITE — client-side logic.
-    // This is the ONLY place users/<deviceId>/streak/* is ever written;
-    // admin.html's Streak Elite panel only reads it. Schema exactly as
-    // finalized with the admin panel:
-    //   settings/streakSystem/{enabled,resetHour,includeMasterKeyLogins,
-    //                           reminderHoursBefore}
-    //   settings/streakBonusMinutes/"1".."7"
-    //   users/<deviceId>/streak/{lifetimeDays,cycleDay,cycleDirection,
-    //     lastUnlockDate,pendingBonusAvailable,pendingBonusMinutes,
-    //     isMasterUser,masterKeyUsed}
-    // ============================================================
-    const DEFAULT_STREAK_BONUS = { 1: 0, 2: 20, 3: 40, 4: 60, 5: 80, 6: 120, 7: 180 };
-
-    // "Today", as this streak system defines it — the date-string of the
-    // most recent reset-hour boundary at or before now. Two visits on
-    // the same calendar day but on opposite sides of the reset hour are
-    // different streak-days; two visits on different calendar dates but
-    // both before today's reset hour are the same streak-day. This is
-    // what every streak comparison in this file is done in terms of,
-    // never the raw calendar date.
-    function streakTodayKey(resetHour) {
-        const now = new Date();
-        const boundary = new Date(now);
-        boundary.setHours(resetHour, 0, 0, 0);
-        const effective = new Date(now);
-        if (now < boundary) effective.setDate(effective.getDate() - 1);
-        const y = effective.getFullYear();
-        const m = String(effective.getMonth() + 1).padStart(2, '0');
-        const d = String(effective.getDate()).padStart(2, '0');
-        return `${y}-${m}-${d}`;
-    }
-
-    // The streak-day immediately before streakTodayKey()'s result —
-    // used to decide whether the last unlock was "yesterday" (streak
-    // continues) or further back (streak broken). Computed by walking
-    // the reset-hour boundary back one day rather than doing calendar
-    // date arithmetic directly, so it stays consistent with
-    // streakTodayKey() even right around midnight.
-    function streakYesterdayKey(resetHour) {
-        const now = new Date();
-        const boundary = new Date(now);
-        boundary.setHours(resetHour, 0, 0, 0);
-        const effective = new Date(now);
-        if (now < boundary) effective.setDate(effective.getDate() - 1);
-        effective.setDate(effective.getDate() - 1);
-        const y = effective.getFullYear();
-        const m = String(effective.getMonth() + 1).padStart(2, '0');
-        const d = String(effective.getDate()).padStart(2, '0');
-        return `${y}-${m}-${d}`;
-    }
-
-    // Minutes remaining until the next reset-hour boundary — used for
-    // the "claimed a regular key within 30 minutes of reset" rule.
-    function streakMinutesUntilReset(resetHour) {
-        const now = new Date();
-        const boundary = new Date(now);
-        boundary.setHours(resetHour, 0, 0, 0);
-        if (boundary <= now) boundary.setDate(boundary.getDate() + 1);
-        return Math.floor((boundary - now) / 60000);
-    }
-
-    function streakBonusMinutesFor(bonusMap, day) {
-        const d = Math.max(1, Math.min(7, Number(day) || 1));
-        const v = bonusMap && bonusMap[d];
-        return typeof v === 'number' ? v : DEFAULT_STREAK_BONUS[d];
-    }
-
-    async function streakLoadSettings() {
-        try {
-            const [sysSnap, bonusSnap] = await Promise.all([
-                get(ref(db, 'settings/streakSystem')),
-                get(ref(db, 'settings/streakBonusMinutes'))
-            ]);
-            const sys = sysSnap.exists() ? sysSnap.val() : {};
-            const bonusRaw = bonusSnap.exists() ? bonusSnap.val() : {};
-            const bonusMap = {};
-            for (let d = 1; d <= 7; d++) {
-                const v = bonusRaw[String(d)];
-                bonusMap[d] = Number.isFinite(v) ? v : DEFAULT_STREAK_BONUS[d];
-            }
-            return {
-                enabled: !!sys.enabled,
-                resetHour: Number.isFinite(sys.resetHour) ? sys.resetHour : 4,
-                includeMasterKeyLogins: sys.includeMasterKeyLogins !== false,
-                reminderHoursBefore: Number.isFinite(sys.reminderHoursBefore) ? sys.reminderHoursBefore : 2,
-                bonusMap
-            };
-        } catch (e) {
-            return { enabled: false, resetHour: 4, includeMasterKeyLogins: true, reminderHoursBefore: 2, bonusMap: DEFAULT_STREAK_BONUS };
-        }
-    }
-
-    // Advances (or resets) a streak record for "today" having just been
-    // reached for the first time this reset-window. Pure function — takes
-    // the previous streak object (or null/undefined for a device with no
-    // streak yet) and today's/yesterday's date-keys, returns the next
-    // streak object. Never called more than once per reset-window per
-    // device (callers check lastUnlockDate first).
-    function streakAdvance(prevStreak, todayKey, yesterdayKey) {
-        const prev = prevStreak || {};
-        const wasContinuing = prev.lastUnlockDate === yesterdayKey && Number(prev.lifetimeDays) >= 1;
-
-        if (!wasContinuing) {
-            // Fresh start (either truly new, or the streak broke — a gap
-            // of 2+ reset-windows since the last unlock).
-            return {
-                lifetimeDays: 1,
-                cycleDay: 1,
-                cycleDirection: 'up',
-                lastUnlockDate: todayKey,
-                pendingBonusAvailable: false,
-                pendingBonusMinutes: 0,
-                isMasterUser: false,
-                masterKeyUsed: null
-            };
-        }
-
-        let cycleDay = Number(prev.cycleDay) || 1;
-        let direction = prev.cycleDirection === 'down' ? 'down' : 'up';
-
-        if (direction === 'up') {
-            if (cycleDay >= 7) { direction = 'down'; cycleDay = 6; }
-            else { cycleDay += 1; }
-        } else {
-            if (cycleDay <= 1) { direction = 'up'; cycleDay = 2; }
-            else { cycleDay -= 1; }
-        }
-
-        return {
-            lifetimeDays: (Number(prev.lifetimeDays) || 0) + 1,
-            cycleDay,
-            cycleDirection: direction,
-            lastUnlockDate: todayKey,
-            pendingBonusAvailable: false,
-            pendingBonusMinutes: 0,
-            isMasterUser: false,
-            masterKeyUsed: null
-        };
-    }
 
     function switchScreen(screenId) {
         const screens = ['namePrompt', 'mainContainer', 'bannedContainer', 'bypassContainer'];
         screens.forEach(id => { document.getElementById(id).style.display = 'none'; });
         document.getElementById(screenId).style.display = 'block';
-        // Nothing to wait for once we've landed on a screen that isn't
-        // actively generating a key (name prompt, banned, bypass) — hide
-        // the boot overlay right away rather than leaving it up until the
-        // key-generation completion hook or the hard cap. mainContainer
-        // is deliberately excluded: that's the key-generation screen, and
-        // hiding happens from displayKeyInfo() once the key is truly
-        // ready, not just once this screen becomes visible.
-        if (screenId !== 'mainContainer' && window.hideBootOverlay) window.hideBootOverlay();
     }
 
     function generateUUID() {
@@ -617,23 +421,15 @@
         // earned on an earlier vplink visit, not a new key-generation
         // event. Requiring a brand-new token on every refresh would
         // wrongly bounce genuine returning users to the bypass screen.
-        // Also allowed through here: a device with a pending streak bonus
-        // saved from earlier today (regular key already expired, bonus
-        // not yet claimed) — claiming that saved bonus later the same day
-        // is a continuation of today's already-earned access, not a new
-        // key-generation event, so it shouldn't need a fresh vplink visit
-        // either. generateLockedKey()'s own 30-minutes-before-reset check
-        // still independently decides whether that pending bonus is still
-        // actually claimable by the time they get there.
         // The token gate below therefore only applies to: a first-time
         // device (no deviceId yet), or a device whose previous key has
-        // expired AND has no pending bonus waiting — both of which ARE
-        // new key-generation events and DO require proof of a fresh
-        // vplink visit. generateLockedKey() further down still
-        // independently re-checks the real expiry from Firebase before
-        // deciding whether to hand back the cached key or mint a new one
-        // — this is just the up-front gate that decides whether to show
-        // the generator screen at all.
+        // expired and is asking for a new one — both of which ARE new
+        // key-generation events and DO require proof of a fresh vplink
+        // visit. generateLockedKey() further down still independently
+        // re-checks the real expiry from Firebase before deciding whether
+        // to hand back the cached key or mint a new one — this is just
+        // the up-front gate that decides whether to show the generator
+        // screen at all.
         if (!isValidAccess) {
             const existingDeviceId = localStorage.getItem('dgxen_device_id');
             if (existingDeviceId) {
@@ -641,9 +437,10 @@
                     const userSnap = await get(ref(db, 'users/' + existingDeviceId));
                     if (userSnap.exists()) {
                         const userData = userSnap.val();
-                        const hasUnexpiredKey = !!(userData.lastGeneratedKey && userData.keyExpiresAt && Date.now() < userData.keyExpiresAt);
-                        const hasPendingBonus = !!(userData.streak && userData.streak.pendingBonusAvailable);
-                        if (userData.status !== 'banned' && (hasUnexpiredKey || hasPendingBonus)) {
+                        if (userData.status !== 'banned' &&
+                            userData.lastGeneratedKey &&
+                            userData.keyExpiresAt &&
+                            Date.now() < userData.keyExpiresAt) {
                             isValidAccess = true;
                         }
                     }
@@ -780,155 +577,63 @@
             if(!deviceId) { location.reload(); return; }
 
             import('https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js').then(async (module) => {
-                const { ref, get, update, set: fbSet } = module;
+                const { ref, get, update } = module;
 
                 const settingsSnap = await get(ref(db, 'settings/keyExpiryHours'));
                 const expiryHours = settingsSnap.exists() ? settingsSnap.val() : 24;
-                const streakSettings = await streakLoadSettings();
 
                 const userRef = ref(db, 'users/' + deviceId);
                 const userSnap = await get(userRef);
+                
+                if (userSnap.exists()) {
+                    const userData = userSnap.val();
+                    const now = Date.now();
 
-                if (!userSnap.exists()) {
-                    localStorage.removeItem('dgxen_device_id');
-                    location.reload();
-                    return;
-                }
+                    if (userData.lastGeneratedKey && userData.keyExpiresAt && now < userData.keyExpiresAt) {
+                        displayKeyInfo(userData.lastGeneratedKey, userData.keyExpiresAt, expiryHours);
+                        return;
+                    }
+                    
+                    const newKey = "DGXEN-" + 
+                        Math.random().toString(36).substring(2,6).toUpperCase() + "-" + 
+                        Math.random().toString(36).substring(2,6).toUpperCase() + "-" + 
+                        Math.random().toString(36).substring(2,6).toUpperCase() + "-" + 
+                        Math.random().toString(36).substring(2,6).toUpperCase();
+                    
+                    const expiresAt = now + (expiryHours * 60 * 60 * 1000);
+                    
+                    await update(userRef, { lastGeneratedKey: newKey, keyExpiresAt: expiresAt, keyGeneratedAt: now });
+                    displayKeyInfo(newKey, expiresAt, expiryHours);
 
-                const userData = userSnap.val();
-                const now = Date.now();
-
-                // --- Fast-generation log (unchanged from before) ---
-                async function maybeLogFastGeneration(newKey) {
+                    // Always log a generation event here — this is the one
+                    // point every key generation passes through regardless
+                    // of whether it's ever later shared/used elsewhere, so
+                    // it's the only reliable place to flag fast generation
+                    // for every case ("any method, legitimate or fake").
+                    // login.html's own share-log write (when a DIFFERENT
+                    // device later uses this key) is a separate, later
+                    // event and doesn't fire for a generator's own first
+                    // login, so it can't cover this by itself.
                     try {
+                        const { set: fbSet } = module;
                         const nameSetAt = userData.nameSetAt;
                         const fastGeneration = !!(nameSetAt && (now - Number(nameSetAt)) < 60000 && now >= Number(nameSetAt));
-                        if (fastGeneration) {
-                            const genLogKey = deviceId.replace(/[.#$\[\]\/]/g, '_') + '_' + now;
-                            await fbSet(ref(db, 'settings/shareLogs/' + genLogKey), {
-                                generatorName: userData.name || 'Unknown Generator',
-                                generatorId: deviceId,
-                                key: newKey,
-                                receiverName: null,
-                                receiverDevice: null,
-                                receiverFingerprint: null,
-                                timestamp: now,
-                                type: 'generation',
-                                fastGeneration: true
-                            });
-                        }
+                        const genLogKey = deviceId.replace(/[.#$\[\]\/]/g, '_') + '_' + now;
+                        await fbSet(ref(db, 'settings/shareLogs/' + genLogKey), {
+                            generatorName: userData.name || 'Unknown Generator',
+                            generatorId: deviceId,
+                            key: newKey,
+                            receiverName: null,
+                            receiverDevice: null,
+                            receiverFingerprint: null,
+                            timestamp: now,
+                            type: 'generation',
+                            fastGeneration: fastGeneration
+                        });
                     } catch (e) { console.warn('generation log write failed', e); }
-                }
-
-                function makeNewKey() {
-                    return "DGXEN-" +
-                        Math.random().toString(36).substring(2,6).toUpperCase() + "-" +
-                        Math.random().toString(36).substring(2,6).toUpperCase() + "-" +
-                        Math.random().toString(36).substring(2,6).toUpperCase() + "-" +
-                        Math.random().toString(36).substring(2,6).toUpperCase();
-                }
-
-                // ============================================================
-                // STREAK: advance today's record if this is the first time
-                // today (per reset-hour) this device has reached this point.
-                // Runs regardless of which key type is ultimately chosen —
-                // the streak-tick itself is "did you show up today", not
-                // "which key did you pick"; the regular/bonus choice below
-                // only affects which key(s) get generated.
-                // ============================================================
-                let streak = userData.streak || null;
-                if (streakSettings.enabled) {
-                    const todayKey = streakTodayKey(streakSettings.resetHour);
-                    const yesterdayKey = streakYesterdayKey(streakSettings.resetHour);
-                    if (!streak || streak.lastUnlockDate !== todayKey) {
-                        streak = streakAdvance(streak, todayKey, yesterdayKey);
-                        try { await update(userRef, { streak }); } catch (e) { console.warn('streak advance write failed', e); }
-                    }
-
-                    // Missed-bonus-expiry rule: a pending bonus saved from
-                    // earlier today is forfeited the moment fewer than 30
-                    // minutes remain before reset — even if the user is
-                    // sitting on this very screen right now. Generating a
-                    // key after this point starts a completely fresh check
-                    // (tomorrow's bonus, once tomorrow's tick happens).
-                    if (streak.pendingBonusAvailable && streakMinutesUntilReset(streakSettings.resetHour) < 30) {
-                        streak = Object.assign({}, streak, { pendingBonusAvailable: false, pendingBonusMinutes: 0 });
-                        try { await update(userRef, { streak }); } catch (e) { console.warn('streak bonus-expiry write failed', e); }
-                    }
-                }
-
-                const isStreaker = streakSettings.enabled && streak && Number(streak.lifetimeDays) >= 2;
-                const bonusMinutesToday = isStreaker ? streakBonusMinutesFor(streakSettings.bonusMap, streak.cycleDay) : 0;
-                const alreadyChoseSomethingToday = !!(userData.keyChoiceDate === (streakSettings.enabled ? streakTodayKey(streakSettings.resetHour) : null));
-
-                // --- Case 1: an unexpired key already exists (refresh) ---
-                if (userData.lastGeneratedKey && userData.keyExpiresAt && now < userData.keyExpiresAt) {
-                    displayKeyInfo(userData.lastGeneratedKey, userData.keyExpiresAt, userData.lastGeneratedKeyHours || expiryHours, userData.lastGeneratedKeyIsBonus);
-                    // Still offer the saved bonus if one's genuinely pending
-                    // and hasn't been claimed — this is the "save the bonus
-                    // for tonight while using the regular key" flow.
-                    if (isStreaker && streak.pendingBonusAvailable && bonusMinutesToday > 0) {
-                        showClaimBonusLaterButton(bonusMinutesToday);
-                    } else {
-                        hideClaimBonusLaterButton();
-                    }
-                    return;
-                }
-
-                // --- Case 2: streak-eligible, no choice made yet today, and
-                //     no bonus already sitting pending from earlier today ---
-                if (isStreaker && bonusMinutesToday > 0 && !alreadyChoseSomethingToday && !streak.pendingBonusAvailable) {
-                    renderKeyChoiceUI(streak, bonusMinutesToday, async (pickedBonus) => {
-                        if (pickedBonus) {
-                            await commitKeyGeneration(true);
-                        } else {
-                            // Regular now, bonus saved for later today.
-                            const newStreak = Object.assign({}, streak, { pendingBonusAvailable: true, pendingBonusMinutes: bonusMinutesToday });
-                            try { await update(userRef, { streak: newStreak, keyChoiceDate: streakTodayKey(streakSettings.resetHour) }); } catch (e) {}
-                            await commitKeyGeneration(false);
-                        }
-                    });
-                    return;
-                }
-
-                // --- Case 2.5: a bonus was saved earlier today (regular
-                //     already used and now expired, or coming back via
-                //     "CLAIM STREAK BONUS") — claim it now rather than
-                //     silently generating another regular key. The
-                //     30-minutes-before-reset forfeiture above already ran
-                //     this same pass, so if we're here, the bonus is still
-                //     genuinely claimable. ---
-                if (isStreaker && streak.pendingBonusAvailable && bonusMinutesToday > 0) {
-                    await commitKeyGeneration(true);
-                    return;
-                }
-
-                // --- Case 3: nothing special — generate a regular key ---
-                await commitKeyGeneration(false);
-
-                async function commitKeyGeneration(asBonus) {
-                    const newKey = makeNewKey();
-                    const hours = asBonus ? (expiryHours + bonusMinutesToday / 60) : expiryHours;
-                    const expiresAt = now + (hours * 60 * 60 * 1000);
-
-                    const writeData = {
-                        lastGeneratedKey: newKey,
-                        keyExpiresAt: expiresAt,
-                        keyGeneratedAt: now,
-                        lastGeneratedKeyHours: hours,
-                        lastGeneratedKeyIsBonus: !!asBonus
-                    };
-                    if (asBonus && isStreaker) {
-                        writeData.streak = Object.assign({}, streak, { pendingBonusAvailable: false, pendingBonusMinutes: 0 });
-                    }
-                    if (streakSettings.enabled) writeData.keyChoiceDate = streakTodayKey(streakSettings.resetHour);
-
-                    await update(userRef, writeData);
-                    hideClaimBonusLaterButton();
-                    displayKeyInfo(newKey, expiresAt, hours, asBonus);
-                    await maybeLogFastGeneration(newKey);
-
-                    if (isStreaker) registerStreakPush(deviceId);
+                } else {
+                    localStorage.removeItem('dgxen_device_id');
+                    location.reload();
                 }
             }).catch(err => {
                 document.getElementById('finalKey').innerText = "DB CONNECTION ERROR";
@@ -939,170 +644,20 @@
         }
     }
 
-    // Renders the Regular-vs-Bonus choice screen inside mainContainer,
-    // swapping keyResultBox out for keyChoiceBox. onPick receives true for
-    // "Bonus" and false for "Regular".
-    function renderKeyChoiceUI(streak, bonusMinutes, onPick) {
-        if (window.hideBootOverlay) window.hideBootOverlay();
-        document.getElementById('mainHeading').innerText = 'Choose Your Key';
-        document.getElementById('mainSubtext').innerText = `Day ${streak.cycleDay} streak — pick how you want to use today's unlock.`;
-        document.getElementById('keyResultBox').style.display = 'none';
-        const box = document.getElementById('keyChoiceBox');
-        box.style.display = 'block';
-        document.getElementById('keyChoiceStreakLine').innerHTML = `🔥 ${streak.lifetimeDays}-day streak — today's bonus is worth <b>+${bonusMinutes}m</b>.`;
-        document.getElementById('chooseBonusLabel').innerText = `— 4h + ${bonusMinutes}m`;
-
-        const regularBtn = document.getElementById('chooseRegularBtn');
-        const bonusBtn = document.getElementById('chooseBonusBtn');
-        const cleanup = () => {
-            regularBtn.replaceWith(regularBtn.cloneNode(true));
-            bonusBtn.replaceWith(bonusBtn.cloneNode(true));
-        };
-        const freshRegular = document.getElementById('chooseRegularBtn');
-        const freshBonus = document.getElementById('chooseBonusBtn');
-        freshRegular.addEventListener('click', () => {
-            box.style.display = 'none';
-            document.getElementById('keyResultBox').style.display = 'block';
-            document.getElementById('mainHeading').innerText = 'Generation Success!';
-            document.getElementById('mainSubtext').innerText = 'One key - One login';
-            onPick(false);
-        }, { once: true });
-        freshBonus.addEventListener('click', () => {
-            box.style.display = 'none';
-            document.getElementById('keyResultBox').style.display = 'block';
-            document.getElementById('mainHeading').innerText = 'Generation Success!';
-            document.getElementById('mainSubtext').innerText = 'One key - One login';
-            onPick(true);
-        }, { once: true });
-    }
-
-    function showClaimBonusLaterButton(bonusMinutes) {
-        const btn = document.getElementById('claimBonusLaterBtn');
-        document.getElementById('claimBonusLaterLabel').innerText = `— 4h + ${bonusMinutes}m`;
-        btn.style.display = 'block';
-        const fresh = btn.cloneNode(true);
-        btn.replaceWith(fresh);
-        fresh.addEventListener('click', () => { generateLockedKeyBonusClaim(); }, { once: true });
-    }
-    function hideClaimBonusLaterButton() {
-        const btn = document.getElementById('claimBonusLaterBtn');
-        if (btn) btn.style.display = 'none';
-    }
-
-    // Called when the user comes back later the same day to claim a
-    // bonus they saved earlier — regenerates through the same
-    // generateLockedKey() path, but the still-unexpired regular key check
-    // at the top would normally just re-show the regular key, so this
-    // forces past it by clearing the cached regular key first. The
-    // pendingBonusAvailable / 30-minutes-before-reset checks inside
-    // generateLockedKey() still apply exactly as they would otherwise.
-    async function generateLockedKeyBonusClaim() {
-        const deviceId = localStorage.getItem('dgxen_device_id');
-        if (!deviceId) return;
-        try {
-            const mod = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js');
-            const { ref: fref, update: fupdate } = mod;
-            await fupdate(fref(db, 'users/' + deviceId), { lastGeneratedKey: null, keyExpiresAt: null });
-        } catch (e) { console.warn('bonus claim pre-clear failed', e); }
-        generateLockedKey();
-    }
-
-    // ============================================================
-    // STREAK ELITE — push notification opt-in.
-    // Called once a device is confirmed to be an active streaker (2+
-    // days). Silently does nothing if the browser doesn't support push,
-    // if the person has already denied/granted permission previously
-    // (no repeat prompts), or if this Worker hasn't been given VAPID
-    // keys yet (503 from /streak-vapid-public-key) — none of those are
-    // errors worth surfacing to the user, streaking works fine without
-    // notifications either way.
-    // ============================================================
-    async function registerStreakPush(deviceId) {
-        try {
-            if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
-            if (Notification.permission === 'denied') return;
-            if (localStorage.getItem('dgxen_streak_push_registered') === '1') return;
-
-            const keyResp = await fetch('https://dgxen-ai-bot.akkumsgsjshjwej.workers.dev/streak-vapid-public-key');
-            if (!keyResp.ok) return; // VAPID not configured yet on the Worker — nothing to do
-            const { publicKey } = await keyResp.json();
-            if (!publicKey) return;
-
-            const permission = Notification.permission === 'granted'
-                ? 'granted'
-                : await Notification.requestPermission();
-            if (permission !== 'granted') return;
-
-            const reg = await navigator.serviceWorker.register('./streak-sw.js');
-            await navigator.serviceWorker.ready;
-
-            const existing = await reg.pushManager.getSubscription();
-            const subscription = existing || await reg.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: urlBase64ToUint8Array(publicKey)
-            });
-
-            await fetch(WORKER_STREAK_SUBSCRIBE_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ deviceId, subscription: subscription.toJSON() })
-            });
-
-            localStorage.setItem('dgxen_streak_push_registered', '1');
-        } catch (e) {
-            // Notification permission dance failing shouldn't ever block
-            // or visibly disrupt the key-generation flow itself.
-            console.warn('streak push registration skipped', e);
+    function displayKeyInfo(key, expiresAt, hours) {
+        document.getElementById('finalKey').innerText = key;
+        const expiryDate = new Date(expiresAt);
+        const timeString = expiryDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        let expiryText = document.getElementById('expiryTextInfo');
+        if(!expiryText) {
+            expiryText = document.createElement('p');
+            expiryText.id = 'expiryTextInfo';
+            expiryText.style = "color: #ffae00; font-size: 13px; font-weight: bold; margin: 12px 0 0; letter-spacing: 0.5px; position: relative; z-index: 2;";
+            const keyElement = document.getElementById('finalKey');
+            if(keyElement && keyElement.parentElement) keyElement.parentElement.appendChild(expiryText);
         }
-    }
-
-    function urlBase64ToUint8Array(base64String) {
-        const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-        const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-        const rawData = atob(base64);
-        const outputArray = new Uint8Array(rawData.length);
-        for (let i = 0; i < rawData.length; i++) outputArray[i] = rawData.charCodeAt(i);
-        return outputArray;
-    }
-
-    function displayKeyInfo(key, expiresAt, hours, isBonus) {
-        // Start the boot overlay's fade-out first, then populate/reveal
-        // the actual key 500ms later — so the overlay is already gone by
-        // the time the key appears, rather than both happening at once.
-        // The overlay disappearing a half-second ahead of the reveal
-        // reads as the loading state leading into the result, instead of
-        // the two events feeling simultaneous/reactive.
-        if (window.hideBootOverlay) window.hideBootOverlay();
-        setTimeout(function() {
-            document.getElementById('finalKey').innerText = key;
-            const expiryDate = new Date(expiresAt);
-            const timeString = expiryDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-
-            let expiryText = document.getElementById('expiryTextInfo');
-            if(!expiryText) {
-                expiryText = document.createElement('p');
-                expiryText.id = 'expiryTextInfo';
-                expiryText.style = "color: #ffae00; font-size: 13px; font-weight: bold; margin: 12px 0 0; letter-spacing: 0.5px; position: relative; z-index: 2;";
-                const keyElement = document.getElementById('finalKey');
-                if(keyElement && keyElement.parentElement) keyElement.parentElement.appendChild(expiryText);
-            }
-            const hoursDisplay = Number.isInteger(hours) ? hours : hours.toFixed(2).replace(/\.?0+$/, '');
-            expiryText.innerHTML = `⏳ Valid for ${hoursDisplay} Hours (Expires at ${timeString})`;
-
-            let bonusTag = document.getElementById('bonusAppliedTag');
-            if (isBonus) {
-                if (!bonusTag) {
-                    bonusTag = document.createElement('p');
-                    bonusTag.id = 'bonusAppliedTag';
-                    bonusTag.style = "color:#ffd23c;font-size:12px;font-weight:900;margin:8px 0 0;letter-spacing:.03em;position:relative;z-index:2;";
-                    expiryText.parentElement.appendChild(bonusTag);
-                }
-                bonusTag.innerHTML = '🔥 Streak bonus applied';
-                bonusTag.style.display = 'block';
-            } else if (bonusTag) {
-                bonusTag.style.display = 'none';
-            }
-        }, 500);
+        expiryText.innerHTML = `⏳ Valid for ${hours} Hours (Expires at ${timeString})`;
     }
 
     document.getElementById('copyBtn').addEventListener('click', () => {
