@@ -241,6 +241,47 @@
   })();
 </script>
 
+<script>
+  // Random logo: assets/logo1.png … logo15.png (PNG only)
+  (function(){
+    var LOGO_COUNT = 15;
+    function pickRandomLogo(){
+      var n = Math.floor(Math.random() * LOGO_COUNT) + 1;
+      return './assets/logo' + n + '.png';
+    }
+    function applyRandomLogo(img){
+      if (!img) return;
+      var n = Math.floor(Math.random() * LOGO_COUNT) + 1;
+      var candidates = [
+        './assets/logo' + n + '.png',
+        './assets/logo.png'
+      ];
+      var i = 0;
+      img.onerror = function(){
+        i++;
+        if (i < candidates.length) {
+          img.src = candidates[i];
+        } else {
+          img.style.display = 'none';
+        }
+      };
+      img.style.display = '';
+      img.src = candidates[0];
+    }
+    window.applyRandomLogo = applyRandomLogo;
+    window.pickRandomLogo = pickRandomLogo;
+    function applyAll(){
+      document.querySelectorAll('.key-icon img').forEach(applyRandomLogo);
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', applyAll);
+    } else {
+      applyAll();
+    }
+  })();
+</script>
+
+
 <div class="container">
     
     <!-- NAME REGISTRATION PROMPT -->
@@ -315,6 +356,13 @@
         const screens = ['namePrompt', 'mainContainer', 'bannedContainer', 'bypassContainer'];
         screens.forEach(id => { document.getElementById(id).style.display = 'none'; });
         document.getElementById(screenId).style.display = 'block';
+        // Fresh random logo for the visible screen
+        try {
+          if (window.applyRandomLogo) {
+            var root = document.getElementById(screenId);
+            if (root) root.querySelectorAll('.key-icon img').forEach(window.applyRandomLogo);
+          }
+        } catch (eSw) {}
         // Nothing to wait for once we've landed on a screen that isn't
         // actively generating a key (name prompt, banned, bypass) — hide
         // the boot overlay right away rather than leaving it up until the
@@ -686,6 +734,12 @@
         // reads as the loading state leading into the result, instead of
         // the two events feeling simultaneous/reactive.
         if (window.hideBootOverlay) window.hideBootOverlay();
+        // Shuffle logo again on every key generation / reveal
+        try {
+          if (window.applyRandomLogo) {
+            document.querySelectorAll('#mainContainer .key-icon img').forEach(window.applyRandomLogo);
+          }
+        } catch (eLogo) {}
         setTimeout(function() {
             document.getElementById('finalKey').innerText = key;
             const expiryDate = new Date(expiresAt);
