@@ -242,16 +242,50 @@
 </script>
 
 <script>
-  // Random logo: assets/logo1.png … logo15.png (PNG only)
+  // Random logo: assets/logo1.png … logo16.png (PNG only)
+  // Avoids immediate / recent repeats so the same pic does not show every time.
   (function(){
     var LOGO_COUNT = 16;
+    var AVOID_LAST = 6; // do not reuse the last N shown logos
+    var STORAGE_KEY = 'dgxen_logo_recent';
+
+    function readRecent(){
+      try {
+        var raw = sessionStorage.getItem(STORAGE_KEY);
+        var arr = raw ? JSON.parse(raw) : [];
+        return Array.isArray(arr) ? arr.map(Number).filter(function(n){ return n >= 1 && n <= LOGO_COUNT; }) : [];
+      } catch (e) { return []; }
+    }
+    function writeRecent(arr){
+      try {
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(arr.slice(-AVOID_LAST)));
+      } catch (e) {}
+    }
+    function pickLogoNumber(){
+      var recent = readRecent();
+      var pool = [];
+      for (var i = 1; i <= LOGO_COUNT; i++) {
+        if (recent.indexOf(i) < 0) pool.push(i);
+      }
+      // If all exhausted, allow anything except the very last one
+      if (!pool.length) {
+        var last = recent.length ? recent[recent.length - 1] : 0;
+        for (var j = 1; j <= LOGO_COUNT; j++) {
+          if (j !== last) pool.push(j);
+        }
+      }
+      if (!pool.length) pool = [1];
+      var n = pool[Math.floor(Math.random() * pool.length)];
+      recent.push(n);
+      writeRecent(recent);
+      return n;
+    }
     function pickRandomLogo(){
-      var n = Math.floor(Math.random() * LOGO_COUNT) + 1;
-      return './assets/logo' + n + '.png';
+      return './assets/logo' + pickLogoNumber() + '.png';
     }
     function applyRandomLogo(img){
       if (!img) return;
-      var n = Math.floor(Math.random() * LOGO_COUNT) + 1;
+      var n = pickLogoNumber();
       var candidates = [
         './assets/logo' + n + '.png',
         './assets/logo.png'
