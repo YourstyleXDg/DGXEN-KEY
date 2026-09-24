@@ -169,6 +169,47 @@
     </div>
 </div>
 
+
+<script>
+  // Random logo: assets/logo1.png … logo15.png (PNG only)
+  (function(){
+    var LOGO_COUNT = 15;
+    function pickRandomLogo(){
+      var n = Math.floor(Math.random() * LOGO_COUNT) + 1;
+      return './assets/logo' + n + '.png';
+    }
+    function applyRandomLogo(img){
+      if (!img) return;
+      var n = Math.floor(Math.random() * LOGO_COUNT) + 1;
+      var candidates = [
+        './assets/logo' + n + '.png',
+        './assets/logo.png'
+      ];
+      var i = 0;
+      img.onerror = function(){
+        i++;
+        if (i < candidates.length) {
+          img.src = candidates[i];
+        } else {
+          img.style.display = 'none';
+        }
+      };
+      img.style.display = '';
+      img.src = candidates[0];
+    }
+    window.applyRandomLogo = applyRandomLogo;
+    window.pickRandomLogo = pickRandomLogo;
+    function applyAll(){
+      document.querySelectorAll('.key-icon img').forEach(applyRandomLogo);
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', applyAll);
+    } else {
+      applyAll();
+    }
+  })();
+</script>
+
 <script>
     // vplink.in occasionally takes a long time to respond to a cold
     // request (seen as the browser's own "This site can't be reached /
