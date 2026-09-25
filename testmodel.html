@@ -2,30 +2,32 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Device Model Tester</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Device Model & Storage Tester</title>
 
 <style>
 *{box-sizing:border-box}
+
 body{
     margin:0;
-    min-height:100vh;
+    padding:20px;
     background:#050505;
     color:#fff;
     font-family:Arial,sans-serif;
-    padding:20px;
 }
+
 .container{
-    max-width:700px;
+    max-width:720px;
     margin:auto;
 }
-h1{
-    margin-bottom:5px;
-}
+
+h1{margin:0 0 6px}
+
 .sub{
     color:#888;
     margin-bottom:20px;
 }
+
 .card{
     background:#111;
     border:1px solid #292929;
@@ -33,41 +35,53 @@ h1{
     padding:18px;
     margin-bottom:14px;
 }
+
 .row{
     display:flex;
     justify-content:space-between;
     gap:15px;
-    padding:10px 0;
+    padding:11px 0;
     border-bottom:1px solid #222;
 }
+
 .row:last-child{border-bottom:0}
+
 .label{color:#999}
+
 .value{
     text-align:right;
     word-break:break-word;
-    max-width:60%;
+    max-width:62%;
 }
+
 .highlight{
-    font-size:22px;
+    font-size:21px;
     font-weight:bold;
-    color:#fff;
 }
+
+.note{
+    color:#999;
+    font-size:13px;
+    line-height:1.5;
+    margin-top:12px;
+}
+
+pre{
+    white-space:pre-wrap;
+    word-break:break-word;
+    color:#aaa;
+    font-size:12px;
+}
+
 button{
     width:100%;
-    padding:13px;
+    padding:14px;
     border:0;
     border-radius:12px;
     background:#fff;
     color:#000;
     font-weight:bold;
     font-size:15px;
-    cursor:pointer;
-}
-pre{
-    white-space:pre-wrap;
-    word-break:break-word;
-    color:#aaa;
-    font-size:12px;
 }
 </style>
 </head>
@@ -76,10 +90,11 @@ pre{
 
 <div class="container">
 
-<h1>📱 Device Model Tester</h1>
-<div class="sub">Browser-exposed hardware/device information</div>
+<h1>📱 Device Model & Storage Tester</h1>
+<div class="sub">Browser-exposed device information</div>
 
 <div class="card">
+
     <div class="row">
         <div class="label">Detected Model</div>
         <div id="model" class="value highlight">Detecting...</div>
@@ -119,99 +134,231 @@ pre{
         <div class="label">GPU Renderer</div>
         <div id="gpu" class="value">...</div>
     </div>
+
 </div>
 
+
 <div class="card">
+
+    <h3>💾 Browser Storage</h3>
+
+    <div class="row">
+        <div class="label">Browser Usage</div>
+        <div id="storageUsed" class="value">Detecting...</div>
+    </div>
+
+    <div class="row">
+        <div class="label">Browser Quota</div>
+        <div id="storageQuota" class="value">Detecting...</div>
+    </div>
+
+    <div class="row">
+        <div class="label">Available Browser Storage</div>
+        <div id="storageAvailable" class="value">Detecting...</div>
+    </div>
+
+    <div class="note">
+        ⚠️ Browser quota is NOT the phone's total internal storage.
+        It cannot reliably tell whether the phone has 128 GB, 256 GB,
+        or another storage capacity.
+    </div>
+
+</div>
+
+
+<div class="card">
+
     <h3>Raw User-Agent</h3>
     <pre id="ua"></pre>
+
 </div>
 
-<div class="card">
-    <h3>Client Hints</h3>
-    <pre id="hints"></pre>
-</div>
 
 <div class="card">
+
+    <h3>User-Agent Client Hints</h3>
+    <pre id="hints">Detecting...</pre>
+
+</div>
+
+
+<div class="card">
+
     <button onclick="location.reload()">🔄 Run Detection Again</button>
+
 </div>
 
 </div>
+
 
 <script>
+
+function formatBytes(bytes){
+
+    if(!Number.isFinite(bytes)) return "Unavailable";
+
+    const gb = bytes / (1024 ** 3);
+
+    if(gb >= 1){
+        return gb.toFixed(2) + " GB";
+    }
+
+    return (bytes / (1024 ** 2)).toFixed(2) + " MB";
+}
+
+
+async function getStorageInfo(){
+
+    try{
+
+        if(!navigator.storage ||
+           !navigator.storage.estimate){
+
+            document.getElementById("storageUsed").textContent =
+                "Unavailable";
+
+            document.getElementById("storageQuota").textContent =
+                "Unavailable";
+
+            document.getElementById("storageAvailable").textContent =
+                "Unavailable";
+
+            return;
+        }
+
+        const estimate = await navigator.storage.estimate();
+
+        const usage = estimate.usage || 0;
+        const quota = estimate.quota || 0;
+        const available = Math.max(quota - usage,0);
+
+        document.getElementById("storageUsed").textContent =
+            formatBytes(usage);
+
+        document.getElementById("storageQuota").textContent =
+            formatBytes(quota);
+
+        document.getElementById("storageAvailable").textContent =
+            formatBytes(available);
+
+    }catch(error){
+
+        document.getElementById("storageUsed").textContent =
+            "Unavailable";
+
+        document.getElementById("storageQuota").textContent =
+            "Unavailable";
+
+        document.getElementById("storageAvailable").textContent =
+            "Unavailable";
+
+    }
+
+}
+
+
 async function detectDevice(){
 
     const ua = navigator.userAgent || "";
 
     document.getElementById("ua").textContent = ua;
 
+
     document.getElementById("platform").textContent =
         navigator.platform || "Unavailable";
 
+
     document.getElementById("screen").textContent =
-        `${screen.width} × ${screen.height}`;
+        screen.width + " × " + screen.height;
+
 
     document.getElementById("dpr").textContent =
         window.devicePixelRatio || "Unavailable";
 
+
     document.getElementById("cores").textContent =
         navigator.hardwareConcurrency || "Unavailable";
+
 
     document.getElementById("memory").textContent =
         navigator.deviceMemory
         ? navigator.deviceMemory + " GB (approx.)"
         : "Unavailable";
 
-    // Android version from User-Agent
-    const androidMatch = ua.match(/Android\s+([\d.]+)/i);
+
+    const androidMatch =
+        ua.match(/Android\s+([\d.]+)/i);
 
     document.getElementById("android").textContent =
-        androidMatch ? androidMatch[1] : "Not detected";
+        androidMatch
+        ? androidMatch[1]
+        : "Not detected";
 
-    // GPU
+
+    // GPU detection
+
     let gpu = "Unavailable";
 
     try{
-        const canvas = document.createElement("canvas");
+
+        const canvas =
+            document.createElement("canvas");
+
         const gl =
             canvas.getContext("webgl") ||
             canvas.getContext("experimental-webgl");
 
         if(gl){
+
             const debugInfo =
-                gl.getExtension("WEBGL_debug_renderer_info");
+                gl.getExtension(
+                    "WEBGL_debug_renderer_info"
+                );
 
             if(debugInfo){
+
                 gpu = gl.getParameter(
                     debugInfo.UNMASKED_RENDERER_WEBGL
                 );
+
             }else{
-                gpu = gl.getParameter(gl.RENDERER);
+
+                gpu = gl.getParameter(
+                    gl.RENDERER
+                );
+
             }
+
         }
+
     }catch(e){}
 
     document.getElementById("gpu").textContent = gpu;
 
+
     // User-Agent Client Hints
+
     let hints = {};
 
     if(navigator.userAgentData){
 
         try{
 
-            hints = await navigator.userAgentData.getHighEntropyValues([
-                "model",
-                "platform",
-                "platformVersion",
-                "architecture",
-                "bitness",
-                "fullVersionList"
-            ]);
+            hints =
+                await navigator.userAgentData
+                .getHighEntropyValues([
+                    "model",
+                    "platform",
+                    "platformVersion",
+                    "architecture",
+                    "bitness",
+                    "fullVersionList"
+                ]);
 
-        }catch(e){
+        }catch(error){
 
             hints = {
-                error:e.toString()
+                error:String(error)
             };
 
         }
@@ -219,25 +366,42 @@ async function detectDevice(){
     }else{
 
         hints = {
-            message:"User-Agent Client Hints not supported"
+            message:
+            "User-Agent Client Hints not supported"
         };
 
     }
 
+
     document.getElementById("hints").textContent =
         JSON.stringify(hints,null,2);
 
-    // Model
-    let model = "Not exposed by browser";
 
-    if(hints.model && hints.model.trim()){
+    // Model
+
+    let model =
+        "Not exposed by browser";
+
+    if(hints.model &&
+       hints.model.trim()){
+
         model = hints.model;
+
     }
 
-    document.getElementById("model").textContent = model;
+    document.getElementById("model").textContent =
+        model;
+
+
+    // Storage
+
+    await getStorageInfo();
+
 }
 
+
 detectDevice();
+
 </script>
 
 </body>
