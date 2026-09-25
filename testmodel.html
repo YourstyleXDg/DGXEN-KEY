@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Device Model Tester</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+    margin:0;
+    min-height:100vh;
+    background:#050505;
+    color:#fff;
+    font-family:Arial,sans-serif;
+    padding:20px;
+}
+.container{
+    max-width:700px;
+    margin:auto;
+}
+h1{
+    margin-bottom:5px;
+}
+.sub{
+    color:#888;
+    margin-bottom:20px;
+}
+.card{
+    background:#111;
+    border:1px solid #292929;
+    border-radius:16px;
+    padding:18px;
+    margin-bottom:14px;
+}
+.row{
+    display:flex;
+    justify-content:space-between;
+    gap:15px;
+    padding:10px 0;
+    border-bottom:1px solid #222;
+}
+.row:last-child{border-bottom:0}
+.label{color:#999}
+.value{
+    text-align:right;
+    word-break:break-word;
+    max-width:60%;
+}
+.highlight{
+    font-size:22px;
+    font-weight:bold;
+    color:#fff;
+}
+button{
+    width:100%;
+    padding:13px;
+    border:0;
+    border-radius:12px;
+    background:#fff;
+    color:#000;
+    font-weight:bold;
+    font-size:15px;
+    cursor:pointer;
+}
+pre{
+    white-space:pre-wrap;
+    word-break:break-word;
+    color:#aaa;
+    font-size:12px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>📱 Device Model Tester</h1>
+<div class="sub">Browser-exposed hardware/device information</div>
+
+<div class="card">
+    <div class="row">
+        <div class="label">Detected Model</div>
+        <div id="model" class="value highlight">Detecting...</div>
+    </div>
+
+    <div class="row">
+        <div class="label">Platform</div>
+        <div id="platform" class="value">...</div>
+    </div>
+
+    <div class="row">
+        <div class="label">Android Version</div>
+        <div id="android" class="value">...</div>
+    </div>
+
+    <div class="row">
+        <div class="label">Screen</div>
+        <div id="screen" class="value">...</div>
+    </div>
+
+    <div class="row">
+        <div class="label">Pixel Ratio</div>
+        <div id="dpr" class="value">...</div>
+    </div>
+
+    <div class="row">
+        <div class="label">CPU Threads</div>
+        <div id="cores" class="value">...</div>
+    </div>
+
+    <div class="row">
+        <div class="label">Memory Estimate</div>
+        <div id="memory" class="value">...</div>
+    </div>
+
+    <div class="row">
+        <div class="label">GPU Renderer</div>
+        <div id="gpu" class="value">...</div>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Raw User-Agent</h3>
+    <pre id="ua"></pre>
+</div>
+
+<div class="card">
+    <h3>Client Hints</h3>
+    <pre id="hints"></pre>
+</div>
+
+<div class="card">
+    <button onclick="location.reload()">🔄 Run Detection Again</button>
+</div>
+
+</div>
+
+<script>
+async function detectDevice(){
+
+    const ua = navigator.userAgent || "";
+
+    document.getElementById("ua").textContent = ua;
+
+    document.getElementById("platform").textContent =
+        navigator.platform || "Unavailable";
+
+    document.getElementById("screen").textContent =
+        `${screen.width} × ${screen.height}`;
+
+    document.getElementById("dpr").textContent =
+        window.devicePixelRatio || "Unavailable";
+
+    document.getElementById("cores").textContent =
+        navigator.hardwareConcurrency || "Unavailable";
+
+    document.getElementById("memory").textContent =
+        navigator.deviceMemory
+        ? navigator.deviceMemory + " GB (approx.)"
+        : "Unavailable";
+
+    // Android version from User-Agent
+    const androidMatch = ua.match(/Android\s+([\d.]+)/i);
+
+    document.getElementById("android").textContent =
+        androidMatch ? androidMatch[1] : "Not detected";
+
+    // GPU
+    let gpu = "Unavailable";
+
+    try{
+        const canvas = document.createElement("canvas");
+        const gl =
+            canvas.getContext("webgl") ||
+            canvas.getContext("experimental-webgl");
+
+        if(gl){
+            const debugInfo =
+                gl.getExtension("WEBGL_debug_renderer_info");
+
+            if(debugInfo){
+                gpu = gl.getParameter(
+                    debugInfo.UNMASKED_RENDERER_WEBGL
+                );
+            }else{
+                gpu = gl.getParameter(gl.RENDERER);
+            }
+        }
+    }catch(e){}
+
+    document.getElementById("gpu").textContent = gpu;
+
+    // User-Agent Client Hints
+    let hints = {};
+
+    if(navigator.userAgentData){
+
+        try{
+
+            hints = await navigator.userAgentData.getHighEntropyValues([
+                "model",
+                "platform",
+                "platformVersion",
+                "architecture",
+                "bitness",
+                "fullVersionList"
+            ]);
+
+        }catch(e){
+
+            hints = {
+                error:e.toString()
+            };
+
+        }
+
+    }else{
+
+        hints = {
+            message:"User-Agent Client Hints not supported"
+        };
+
+    }
+
+    document.getElementById("hints").textContent =
+        JSON.stringify(hints,null,2);
+
+    // Model
+    let model = "Not exposed by browser";
+
+    if(hints.model && hints.model.trim()){
+        model = hints.model;
+    }
+
+    document.getElementById("model").textContent = model;
+}
+
+detectDevice();
+</script>
+
+</body>
+</html>
