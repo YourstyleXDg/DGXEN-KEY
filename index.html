@@ -476,7 +476,7 @@ body.recall-ready{cursor:crosshair}
 .auto-notch.active span{color:var(--accent)}
 .auto-notch.active .notch-led{background:var(--accent);box-shadow:0 0 10px rgba(0,255,136,.6),inset 0 0 4px #fff}
 
-.btn{width:100%;padding:16px;border:0;border-radius:14px;background:linear-gradient(135deg,#fff,#dfe5e1);color:#020302;font-size:15px;font-weight:900;letter-spacing:.35px;cursor:pointer;box-shadow:0 10px 28px rgba(0,0,0,.38),inset 0 1px #fff;transition:transform .15s,box-shadow .25s,background .25s}.btn:active{transform:scale(.975)}.btn:disabled{opacity:.64;cursor:wait}.btn.success{background:linear-gradient(135deg,#60ffb5,#00cf73);box-shadow:0 10px 30px rgba(0,255,136,.32)}
+.btn{width:100%;padding:16px;border:0;border-radius:14px;background:linear-gradient(135deg,#fff,#dfe5e1);color:#020302;font-size:15px;font-weight:900;letter-spacing:.35px;cursor:pointer;box-shadow:0 10px 28px rgba(0,0,0,.38),inset 0 1px #fff;transition:transform .2s ease,box-shadow .4s ease,background .45s ease,color .35s ease,opacity .28s ease,filter .35s ease}.btn:active{transform:scale(.975)}.btn:disabled{opacity:.64;cursor:wait}.btn.success{background:linear-gradient(135deg,#60ffb5,#00cf73);color:#02140a;box-shadow:0 10px 30px rgba(0,255,136,.32)}.btn.btn-label-swap{opacity:.55;filter:saturate(.85);transform:scale(.985)}
 .status{min-height:20px;margin-top:14px;font-size:12.5px;font-weight:750;line-height:1.45}.get-key{display:block;margin-top:17px;padding:7px;color:var(--muted);font-size:12px;text-decoration:none}.get-key:hover{color:#fff}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important}.glass{transform:none!important}}
 @media (max-height:650px){body{overflow:auto;padding-top:28px;padding-bottom:28px}.glass{padding-top:34px;padding-bottom:27px}.tagline{margin-bottom:18px}}
@@ -3840,17 +3840,28 @@ window.sfxSuccess.addEventListener('error', function(){ try{ window.sfxSuccess=n
 window.__audioUnlocked=false;
 window.__pendingSound=null;
 window.unlockAudio=function(){
-  if(window.__audioUnlocked) return;
-  window.__audioUnlocked=true;
-  [window.sfxSuccess,window.sfxFailed,window.sfxSaveKey,window.sfxRecall,window.sfxAutoLogin,window.sfxBlockSwitch,window.__dgxenJoinDanceAudio,window.__dgxenJoinClickAudio].forEach(function(a){
+  // Warm elements on user gesture. Only mark unlocked after a real play succeeds
+  // (old code set unlocked=true immediately, so a failed first unlock never retried).
+  var list=[window.sfxSuccess,window.sfxFailed,window.sfxSaveKey,window.sfxRecall,window.sfxAutoLogin,window.sfxBlockSwitch,window.__dgxenJoinDanceAudio,window.__dgxenJoinClickAudio];
+  list.forEach(function(a){
     if(!a) return;
     try{
-      const p=a.play();
-      if(p&&p.then) p.then(function(){ a.pause(); a.currentTime=0; }).catch(function(){});
+      var p=a.play();
+      if(p&&p.then) p.then(function(){
+        window.__audioUnlocked=true;
+        try{ a.pause(); a.currentTime=0; }catch(e2){}
+      }).catch(function(){});
     }catch(e){}
   });
   if(window.__pendingSound){
-    try{ const o=window.__pendingSound; window.__pendingSound=null; o.currentTime=0; o.play().catch(function(){}); }catch(e){}
+    try{
+      var o=window.__pendingSound;
+      var src=(o&&(o.currentSrc||o.src))||'';
+      var n=src?new Audio(src):o;
+      if(!n) return;
+      n.volume=1;
+      n.play().then(function(){ window.__pendingSound=null; window.__audioUnlocked=true; }).catch(function(){});
+    }catch(e){}
   }
 };
 ['pointerdown','touchstart','click'].forEach(function(ev){
@@ -3976,39 +3987,64 @@ window.playSoundReliable = function(obj){
   if(!obj) return;
   window.__pendingSound = obj;
   try{ if(window.unlockAudio) window.unlockAudio(); }catch(eU){}
+  // Prefer the preloaded element first (already warmed by unlockAudio), then clones
+  var played = false;
+  function attempt(useClone){
+    if(played) return;
+    try{
+      var node = obj;
+      if(useClone){
+        var src = obj.currentSrc || obj.src || '';
+        if(src) node = new Audio(src);
+      }
+      node.muted = false;
+      node.volume = 1;
+      try{ node.currentTime = 0; }catch(eC){}
+      var pr = node.play();
+      if(pr && pr.then){
+        pr.then(function(){
+          played = true;
+          window.__audioUnlocked = true;
+          window.__pendingSound = null;
+        }).catch(function(){});
+      }
+    }catch(e){}
+  }
+  attempt(false);
+  attempt(true);
   window.playSound(obj);
-  // Retry a few times for WebView; clear when play actually starts
   var tries = 0;
   var iv = setInterval(function(){
     tries++;
-    if(!window.__pendingSound || tries > 10){ try{ clearInterval(iv); }catch(e){} return; }
-    try{
-      var o = window.__pendingSound;
-      var src = (o && (o.currentSrc || o.src)) || '';
-      var n = src ? new Audio(src) : o;
-      if(!n) return;
-      n.volume = 1;
-      var pr = n.play();
-      if(pr && pr.then){
-        pr.then(function(){ window.__pendingSound = null; try{ clearInterval(iv); }catch(e){} }).catch(function(){});
-      }
-    }catch(e){}
-  }, 220);
-  // After any next user gesture, ensure it plays (auto-login / blocked autoplay)
+    if(played || !window.__pendingSound || tries > 12){ try{ clearInterval(iv); }catch(e){} return; }
+    attempt(tries % 2 === 0);
+  }, 180);
   const flush = function(){
-    if(!window.__pendingSound) return;
-    const o = window.__pendingSound;
-    try{
-      var src = o.currentSrc || o.src || '';
-      var n = src ? new Audio(src) : o;
-      n.volume = 1;
-      try{ if(n === o) o.currentTime = 0; }catch(e){}
-      n.play().then(function(){ window.__pendingSound = null; try{ clearInterval(iv); }catch(e2){} }).catch(function(){});
-    }catch(e){}
+    if(played || !window.__pendingSound) return;
+    attempt(false);
+    attempt(true);
   };
   document.addEventListener('pointerdown', flush, {once:true, passive:true});
   document.addEventListener('touchstart', flush, {once:true, passive:true});
   document.addEventListener('click', flush, {once:true, passive:true});
+};
+
+/** Smooth UNLOCK → ACCESS GRANTED (green) without a hard text jump. */
+window.applyAccessGrantedButton = function(button){
+  try{
+    if(!button) return;
+    button.disabled = true;
+    button.classList.add('btn-label-swap');
+    setTimeout(function(){
+      try{
+        button.classList.add('success');
+        button.textContent = 'ACCESS GRANTED';
+        button.classList.remove('btn-label-swap');
+      }catch(e){}
+    }, 140);
+  }catch(e){
+    try{ button.classList.add('success'); button.textContent = 'ACCESS GRANTED'; }catch(e2){}
+  }
 };
 
 let dragX=0,dragY=0,startX=0,startY=0,baseX=0,baseY=0;
@@ -7443,6 +7479,30 @@ async function verifyKey(){
     }else if(!isValid){show('Invalid Key Format!','var(--error)'); window.playSound(window.sfxFailed); localStorage.removeItem('dgxen_saved_key');btn.disabled=false;return}
 
     if(isValid){
+      // Force-update gate first (must block unlock). Keep this before success UI.
+      if (await shouldBlockUnlockForForceUpdate()) {
+        btn.disabled = false;
+        btn.classList.remove('success');
+        btn.classList.remove('btn-label-swap');
+        btn.textContent = 'UNLOCK APP';
+        show('Update required before unlock', 'var(--error)');
+        try { window.playSound(window.sfxFailed); } catch (e) {}
+        return;
+      }
+      // CRITICAL: success sound + button MUST run before heavy Firebase post-work.
+      // User keys used to await reportAppVersionCode / sessionGuard / trial cleanup
+      // first — that delayed SFX past the gesture window (silent) and left the
+      // button stuck on "UNLOCK APP" / checking state when those awaits were slow.
+      try{ window.playSoundReliable(window.sfxSuccess); }catch(eSfx){}
+      try{ window.applyAccessGrantedButton(btn); }catch(eBtn){
+        try{ btn.classList.add('success'); btn.textContent='ACCESS GRANTED'; }catch(eBtn2){}
+      }
+      save.checked?localStorage.setItem('dgxen_saved_key',userInput):localStorage.removeItem('dgxen_saved_key');
+      window.__dgxenLoggedIn = true;
+      try{ if(window.__dgxenStopAtmSound) window.__dgxenStopAtmSound(); }catch(e){}
+      try{ if(window.__dgxenStopWorldSound) window.__dgxenStopWorldSound(); }catch(e){}
+
+      // Post-login bookkeeping (same as before) — after UI/SFX so user keys match master feel
       try {
         const matchedUid = window.__lastMatchedUserId || null;
         await reportAppVersionCode(matchedUid);
@@ -7456,7 +7516,6 @@ async function verifyKey(){
             });
           }
         } catch (eWrite) { console.warn('native id write', eWrite); }
-        // Start live session guard (ban / key ban / master delete) while user uses app
         const isMaster = !userInput.startsWith('DGXEN-');
         try {
           let expAt = null;
@@ -7487,13 +7546,6 @@ async function verifyKey(){
             expiresAt: expAt
           });
         } catch (gErr) { console.warn('guard start', gErr); }
-        // Clear any stale trial flag / duplicate trial block for this
-        // device the moment a REAL (non-trial) login succeeds — matches
-        // the exact bug this fixes: a device's users/ record keeping
-        // trial:true (and its old trial keyExpiresAt) even after the
-        // person has since generated and logged in with a real key,
-        // which made the trial prompt/timer wrongly reappear and made
-        // admin.html keep showing a TRIAL badge on a real key.
         try {
           const isTrialKeyItself = String(userInput || '').trim().toUpperCase() === String(__trialKeyValue || '').trim().toUpperCase();
           if (!isTrialKeyItself) {
@@ -7502,24 +7554,6 @@ async function verifyKey(){
         } catch (eClean) { console.warn('trial cleanup', eClean); }
         window.__lastMatchedUserId=null;
       } catch(e) {}
-      // Force-update gate: never unlock (or auto-login loop) while stale + forceUpdate
-      if (await shouldBlockUnlockForForceUpdate()) {
-        btn.disabled = false;
-        btn.classList.remove('success');
-        btn.textContent = 'UNLOCK APP';
-        show('Update required before unlock', 'var(--error)');
-        try { window.playSound(window.sfxFailed); } catch (e) {}
-        return;
-      }
-      window.playSoundReliable(window.sfxSuccess);
-      btn.classList.add('success');btn.textContent='ACCESS GRANTED';
-      save.checked?localStorage.setItem('dgxen_saved_key',userInput):localStorage.removeItem('dgxen_saved_key');
-      // Once logged in, all background/ambient sound stays off for good — both the 2D
-      // theme track and the 3D world's ultrasonic track — and this flag stops either
-      // one from being restarted by a stray tap, theme refresh, or re-entering the world.
-      window.__dgxenLoggedIn = true;
-      try{ if(window.__dgxenStopAtmSound) window.__dgxenStopAtmSound(); }catch(e){}
-      try{ if(window.__dgxenStopWorldSound) window.__dgxenStopWorldSound(); }catch(e){}
       setTimeout(()=>{try{if(window.Android&&typeof window.Android.unlock==='function')window.Android.unlock();else show('Unlocked! (Browser Mode)','var(--accent)')}catch(e){console.error('Android bridge error:',e);show('Unlocked! (Fallback Mode)','var(--accent)')}},250);
     }
   }catch(e){console.error(e);show('Network Error!','var(--error)'); window.playSound(window.sfxFailed); btn.disabled=false}
