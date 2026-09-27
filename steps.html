@@ -275,6 +275,9 @@
     async function goToVplink() {
         const btn = document.getElementById('continueBtn');
         const note = document.getElementById('vplinkRetryNote');
+        // Start of key-flow timer (admin fast-gen). Set on intentional continue,
+        // not on page load — so idle time on steps does not count.
+        try { sessionStorage.setItem('dgxen_flow_started_at', String(Date.now())); } catch (e) {}
         btn.disabled = true;
         btn.style.opacity = '0.75';
         btn.style.cursor = 'default';
