@@ -723,42 +723,12 @@
                     
                     const expiresAt = now + (expiryHours * 60 * 60 * 1000);
 
-                    // Flow timer: started when user tapped CONTINUE on steps.html.
-                    // First-ever key after registration is NEVER fast-gen (normal onboarding).
-                    // Regen after expiry: fast-gen if CONTINUE → new key is under 60s.
-                    var flowStartedAt = 0;
-                    try { flowStartedAt = Number(sessionStorage.getItem('dgxen_flow_started_at')) || 0; } catch (eFs) {}
-                    var hadPriorKey = !!(userData.lastGeneratedKey && String(userData.lastGeneratedKey).trim());
-                    var fastGeneration = !!(hadPriorKey && flowStartedAt && now >= flowStartedAt && (now - flowStartedAt) < 60000);
-
-                    var patch = { lastGeneratedKey: newKey, keyExpiresAt: expiresAt, keyGeneratedAt: now };
-                    if (flowStartedAt) patch.flowStartedAt = flowStartedAt;
-                    // Preserve nameSetAt; do not overwrite with key time
-                    await update(userRef, patch);
+                    await update(userRef, {
+                        lastGeneratedKey: newKey,
+                        keyExpiresAt: expiresAt,
+                        keyGeneratedAt: now
+                    });
                     displayKeyInfo(newKey, expiresAt, expiryHours);
-
-                    try {
-                        const { set: fbSet } = module;
-                        if (fastGeneration) {
-                            const genLogKey = deviceId.replace(/[.#$\[\]\/]/g, '_') + '_' + now;
-                            await fbSet(ref(db, 'settings/shareLogs/' + genLogKey), {
-                                generatorName: userData.name || 'Unknown Generator',
-                                generatorId: deviceId,
-                                key: newKey,
-                                receiverName: null,
-                                receiverDevice: null,
-                                receiverFingerprint: null,
-                                timestamp: now,
-                                nameSetAt: userData.nameSetAt || null,
-                                keyGeneratedAt: now,
-                                flowStartedAt: flowStartedAt || null,
-                                type: 'fastgen',
-                                fastGeneration: true
-                            });
-                        }
-                        // Clear flow timer so a later refresh/view does not re-use it
-                        try { sessionStorage.removeItem('dgxen_flow_started_at'); } catch (eClr) {}
-                    } catch (e) { console.warn('generation log write failed', e); }
                 } else {
                     localStorage.removeItem('dgxen_device_id');
                     location.reload();
