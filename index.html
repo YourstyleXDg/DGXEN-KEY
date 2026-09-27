@@ -474,6 +474,29 @@
         //     the wrong timing, look identical to a fresh legitimate
         //     visit. Consumption now happens server-side instead, in a
         //     single atomic verify-and-burn request.
+        // Ban check FIRST — before token/bypass. Banned users must see the
+        // banned screen, not "Bypass Detected", even without a valid token.
+        try {
+            const earlyId = localStorage.getItem('dgxen_device_id');
+            if (earlyId) {
+                const earlySnap = await get(ref(db, 'users/' + earlyId));
+                if (earlySnap.exists()) {
+                    const earlyUser = earlySnap.val() || {};
+                    if (String(earlyUser.status || '').toLowerCase() === 'banned') {
+                        let dbReason = earlyUser.banReason || '';
+                        if (dbReason.toLowerCase().includes('generate a new key') || dbReason === '') {
+                            document.getElementById('banReasonText').innerText =
+                                'Your device has been permanently blacklisted from the DGXEN network. You can no longer generate access keys.';
+                        } else {
+                            document.getElementById('banReasonText').innerText = 'Reason: ' + dbReason;
+                        }
+                        switchScreen('bannedContainer');
+                        return;
+                    }
+                }
+            }
+        } catch (eBanEarly) { /* Firebase unreachable — continue normal gate */ }
+
         let isValidAccess = false;
 
         // Developer/testing override: ?dev=<value>, checked against
@@ -557,9 +580,21 @@
                 try {
                     const userSnap = await get(ref(db, 'users/' + existingDeviceId));
                     if (userSnap.exists()) {
-                        const userData = userSnap.val();
-                        if (userData.status !== 'banned' &&
-                            userData.lastGeneratedKey &&
+                        const userData = userSnap.val() || {};
+                        // User-ban (not key-ban): show banned page even if key still has time left.
+                        // Refresh has no token — must not fall through to "Bypass Detected".
+                        if (String(userData.status || '').toLowerCase() === 'banned') {
+                            let dbReason = userData.banReason || '';
+                            if (dbReason.toLowerCase().includes('generate a new key') || dbReason === '') {
+                                document.getElementById('banReasonText').innerText =
+                                    'Your device has been permanently blacklisted from the DGXEN network. You can no longer generate access keys.';
+                            } else {
+                                document.getElementById('banReasonText').innerText = 'Reason: ' + dbReason;
+                            }
+                            switchScreen('bannedContainer');
+                            return;
+                        }
+                        if (userData.lastGeneratedKey &&
                             userData.keyExpiresAt &&
                             Date.now() < userData.keyExpiresAt) {
                             isValidAccess = true;
@@ -588,6 +623,27 @@
         }
 
         if (!isValidAccess) {
+            // Last check before bypass UI: banned account must never see "Bypass Detected"
+            try {
+                const banId = localStorage.getItem('dgxen_device_id');
+                if (banId) {
+                    const banSnap = await get(ref(db, 'users/' + banId));
+                    if (banSnap.exists()) {
+                        const banUser = banSnap.val() || {};
+                        if (String(banUser.status || '').toLowerCase() === 'banned') {
+                            let dbReason = banUser.banReason || '';
+                            if (dbReason.toLowerCase().includes('generate a new key') || dbReason === '') {
+                                document.getElementById('banReasonText').innerText =
+                                    'Your device has been permanently blacklisted from the DGXEN network. You can no longer generate access keys.';
+                            } else {
+                                document.getElementById('banReasonText').innerText = 'Reason: ' + dbReason;
+                            }
+                            switchScreen('bannedContainer');
+                            return;
+                        }
+                    }
+                }
+            } catch (eBanLast) { /* ignore — show bypass only if not banned */ }
             switchScreen('bypassContainer');
             return;
         }
