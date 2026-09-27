@@ -134,13 +134,24 @@
         .btn-red:active { transform: scale(0.975); }
 
         .error-card { border-color: rgba(255, 82, 82, 0.4); background: linear-gradient(145deg, rgba(255,0,0,.05), rgba(255,255,255,.02)); box-shadow: 0 38px 100px rgba(0,0,0,.72), inset 0 1.5px rgba(255,82,82,.2); }
-        .error-icon { font-size: 55px; margin: 0 auto 16px; filter: drop-shadow(0 0 15px rgba(255,82,82,0.5)); position: relative; z-index: 2; }
+        .error-icon { margin: 0 auto 16px; position: relative; z-index: 2; color: var(--error); display:flex; justify-content:center; align-items:center; }
         .error-title { color: var(--error); font-size: 24px; font-weight: 800; margin-bottom: 12px; text-shadow: 0 0 20px rgba(255,82,82,.4); position: relative; z-index: 2; }
 
         .contact-admin { display: inline-flex; align-items: center; justify-content: center; margin-top: 15px; padding: 12px 24px; border-radius: 999px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); color: var(--muted); font-size: 13px; font-weight: 700; text-decoration: none; transition: 0.3s; position: relative; z-index: 2; }
         .contact-admin:hover { background: rgba(255, 255, 255, 0.12); color: #fff; border-color: rgba(255, 255, 255, 0.25); transform: scale(1.04); }
 
         .footer { margin-top: 40px; color: rgba(255,255,255,0.22); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; font-weight: 800; }
+
+        /* Professional UI icons (replace emoji) */
+        .ui-icon { display: inline-block; vertical-align: middle; flex-shrink: 0; }
+        .ui-icon-inline { margin: 0 2px; }
+        .ui-icon-lg { display: block; margin: 0 auto 16px; filter: drop-shadow(0 0 16px rgba(255,82,82,0.35)); }
+        .error-icon { display: flex; justify-content: center; align-items: center; margin: 0 auto 16px; color: var(--error); }
+        .error-icon .ui-icon-lg { margin: 0; }
+        .warning-icon { color: var(--warning-text); display: flex; align-items: flex-start; padding-top: 1px; }
+        .btn .ui-icon { margin-left: 6px; }
+        .btn-success .ui-icon { margin-left: 6px; }
+        #expiryTextInfo .ui-icon { margin-right: 5px; color: #ffae00; }
     </style>
 </head>
 <body>
@@ -349,7 +360,7 @@
     <div id="bannedContainer" class="screen-container">
         <div class="glass-card error-card">
             <div class="glass-glare"></div>
-            <div class="error-icon">💀</div>
+            <div class="error-icon" aria-hidden="true"><svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24" width="56" height="56" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 2a8 8 0 015.66 13.66L6.34 6.34A7.95 7.95 0 0112 4zm-5.66 2.34l11.32 11.32A8 8 0 016.34 6.34z"/></svg></div>
             <div class="error-title">Device Banned</div>
             <p class="card-p" id="banReasonText" style="color: #d1d1d1; line-height: 1.6;">Your device has been permanently blacklisted from the DGXEN network. You can no longer generate access keys.</p>
             <a href="https://t.me/DGXEN" target="_blank" class="contact-admin">Contact Support</a>
@@ -360,7 +371,7 @@
     <div id="bypassContainer" class="screen-container">
         <div class="glass-card error-card">
             <div class="glass-glare"></div>
-            <div class="error-icon">🚫</div>
+            <div class="error-icon" aria-hidden="true"><svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24" width="56" height="56" aria-hidden="true"><path fill="currentColor" d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm0 10.99h6c-.47 3.11-2.66 5.82-6 6.93V13H6.03C6.3 9.9 8.4 7.25 12 6.09v6.9z"/></svg></div>
             <div class="error-title">Bypass Detected!</div>
             <p class="card-p" style="color: #d1d1d1;">Direct access is prohibited. Please use the official App link to generate your key.</p>
             <button class="btn btn-red" id="returnBtn" style="margin-top: 10px;">RETURN TO STEPS</button>
@@ -788,7 +799,7 @@
                 const keyElement = document.getElementById('finalKey');
                 if(keyElement && keyElement.parentElement) keyElement.parentElement.appendChild(expiryText);
             }
-            expiryText.innerHTML = `⏳ Valid for ${hours} Hours (Expires at ${timeString})`;
+            expiryText.innerHTML = `<svg class="ui-icon ui-icon-inline" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 11h4v-2h-3V7h-2v6z"/></svg> Valid for ${hours} Hours (Expires at ${timeString})`;
         }, 500);
     }
 
@@ -798,10 +809,10 @@
 
         navigator.clipboard.writeText(keyText).then(() => {
             const btn = document.getElementById('copyBtn');
-            btn.innerText = "COPIED SUCCESSFULLY! ✅";
+            btn.innerHTML = 'COPIED SUCCESSFULLY <svg class="ui-icon ui-icon-inline" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M9.2 16.6L4.8 12.2l1.4-1.4 3 3 8.6-8.6 1.4 1.4-10 10z"/></svg>';
             btn.classList.add('btn-success');
             setTimeout(() => { 
-                btn.innerText = "COPY TO CLIPBOARD"; 
+                btn.textContent = "COPY TO CLIPBOARD"; 
                 btn.classList.remove('btn-success');
             }, 2000);
         });
