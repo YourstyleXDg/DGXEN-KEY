@@ -408,10 +408,10 @@
             if (!deviceId) return;
             const safe = pathSafeId(deviceId);
             const now = Date.now();
-            // Clear any pending_* session id written by steps.html
+            // Clear any pending_* session id written by steps.html (never leave a fake UUID/pending card)
             try {
                 const pending = sessionStorage.getItem('dgxen_coming_id');
-                if (pending && pathSafeId(pending) !== safe) {
+                if (pending) {
                     await set(ref(db, 'deviceRequests/' + pathSafeId(pending)), null);
                     sessionStorage.removeItem('dgxen_coming_id');
                 }
