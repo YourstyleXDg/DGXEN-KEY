@@ -255,6 +255,44 @@
   })();
 </script>
 
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    const app = initializeApp({ databaseURL: "https://login-pass-1a196-default-rtdb.firebaseio.com/" });
+    const db = getDatabase(app);
+
+    // Signal admin "User is coming" when CONTINUE is tapped — does not
+    // touch key/token security. Cleared by index.html once a key is minted
+    // (or after 12 min / registration).
+    window.__dgxenSignalComing = async function() {
+      try {
+        let deviceId = '';
+        try { deviceId = String(localStorage.getItem('dgxen_device_id') || '').trim(); } catch (e) {}
+        let id = deviceId;
+        if (!id) {
+          try { id = String(sessionStorage.getItem('dgxen_coming_id') || '').trim(); } catch (e2) {}
+          if (!id) {
+            id = 'pending_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 9);
+            try { sessionStorage.setItem('dgxen_coming_id', id); } catch (e3) {}
+          }
+        }
+        const safe = String(id).replace(/[.#$\[\]\/]/g, '_');
+        const now = Date.now();
+        let name = '';
+        try {
+          // Best-effort: if already registered, admin can show name later from users/
+          name = '';
+        } catch (e4) {}
+        await set(ref(db, 'deviceRequests/' + safe), {
+          deviceId: id,
+          time: now,
+          expiresAt: now + 12 * 60 * 1000,
+          source: 'steps',
+          phase: deviceId ? 'generating' : 'coming'
+        });
+      } catch (e) { /* never block navigation */ }
+    };
+</script>
 <script>
     // vplink.in occasionally takes a long time to respond to a cold
     // request (seen as the browser's own "This site can't be reached /
@@ -302,6 +340,16 @@
                 // Either it's reachable, or we've retried enough — go for
                 // real navigation either way rather than stalling forever
                 // (a false-negative ping should never trap the person).
+                try {
+                  if (typeof window.__dgxenSignalComing === 'function') {
+                    // Fire-and-forget with a short wait so the write can land
+                    // before the tab navigates away; never block more than 900ms.
+                    await Promise.race([
+                      window.__dgxenSignalComing(),
+                      new Promise(function(r){ setTimeout(r, 900); })
+                    ]);
+                  }
+                } catch (eSig) {}
                 location.href = VPLINK_URL;
                 return;
             }
