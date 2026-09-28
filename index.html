@@ -397,6 +397,47 @@
     // wherever worker.js is actually deployed.
     const WORKER_CONSUME_URL = "https://dgxen-ai-bot.akkumsgsjshjwej.workers.dev/consume";
 
+    // ---- Admin "User coming / generating" signals (deviceRequests only) ----
+    // Does NOT touch /consume, tokens, or key security. Admin listens on
+    // deviceRequests and shows "User is coming" or "Generating key…".
+    function pathSafeId(id) {
+        return String(id || '').replace(/[.#$\[\]\/]/g, '_');
+    }
+    async function signalDeviceRequest(deviceId, phase) {
+        try {
+            if (!deviceId) return;
+            const safe = pathSafeId(deviceId);
+            const now = Date.now();
+            // Clear any pending_* session id written by steps.html
+            try {
+                const pending = sessionStorage.getItem('dgxen_coming_id');
+                if (pending && pathSafeId(pending) !== safe) {
+                    await set(ref(db, 'deviceRequests/' + pathSafeId(pending)), null);
+                    sessionStorage.removeItem('dgxen_coming_id');
+                }
+            } catch (eP) {}
+            await set(ref(db, 'deviceRequests/' + safe), {
+                deviceId: deviceId,
+                time: now,
+                expiresAt: now + 12 * 60 * 1000,
+                source: 'index',
+                phase: phase || 'generating'
+            });
+        } catch (e) {}
+    }
+    async function clearDeviceRequest(deviceId) {
+        try {
+            if (deviceId) await set(ref(db, 'deviceRequests/' + pathSafeId(deviceId)), null);
+        } catch (e) {}
+        try {
+            const pending = sessionStorage.getItem('dgxen_coming_id');
+            if (pending) {
+                await set(ref(db, 'deviceRequests/' + pathSafeId(pending)), null);
+                sessionStorage.removeItem('dgxen_coming_id');
+            }
+        } catch (e2) {}
+    }
+
     function switchScreen(screenId) {
         const screens = ['namePrompt', 'mainContainer', 'bannedContainer', 'bypassContainer'];
         screens.forEach(id => { document.getElementById(id).style.display = 'none'; });
@@ -710,6 +751,8 @@
                 } catch (e) {
                     console.error("Firebase write error:", e);
                 }
+                // Promote steps pending → real device "generating" for admin
+                try { await signalDeviceRequest(deviceId, 'generating'); } catch (eSig) {}
 
                 proceedToKey();
             };
@@ -743,6 +786,10 @@
 
     function proceedToKey() {
         switchScreen('mainContainer');
+        try {
+            const id = localStorage.getItem('dgxen_device_id');
+            if (id) signalDeviceRequest(id, 'generating');
+        } catch (e) {}
         generateLockedKey();
     }
 
@@ -805,6 +852,11 @@
         // The overlay disappearing a half-second ahead of the reveal
         // reads as the loading state leading into the result, instead of
         // the two events feeling simultaneous/reactive.
+        // Key ready → remove admin "coming / generating" illusion
+        try {
+            const id = localStorage.getItem('dgxen_device_id');
+            clearDeviceRequest(id);
+        } catch (eClr) {}
         if (window.hideBootOverlay) window.hideBootOverlay();
         // Shuffle logo again on every key generation / reveal
         try {
