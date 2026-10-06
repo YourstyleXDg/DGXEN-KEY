@@ -801,14 +801,14 @@
             if(!deviceId) { location.reload(); return; }
 
             import('https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js').then(async (module) => {
-                const { ref, get, update } = module;
+                const { ref, get, update, increment, runTransaction } = module;
 
                 const settingsSnap = await get(ref(db, 'settings/keyExpiryHours'));
                 const expiryHours = settingsSnap.exists() ? settingsSnap.val() : 24;
 
                 const userRef = ref(db, 'users/' + deviceId);
                 const userSnap = await get(userRef);
-                
+
                 if (userSnap.exists()) {
                     const userData = userSnap.val();
                     const now = Date.now();
@@ -817,20 +817,61 @@
                         displayKeyInfo(userData.lastGeneratedKey, userData.keyExpiresAt, expiryHours);
                         return;
                     }
-                    
-                    const newKey = "DGXEN-" + 
-                        Math.random().toString(36).substring(2,6).toUpperCase() + "-" + 
-                        Math.random().toString(36).substring(2,6).toUpperCase() + "-" + 
-                        Math.random().toString(36).substring(2,6).toUpperCase() + "-" + 
+
+                    const newKey = "DGXEN-" +
+                        Math.random().toString(36).substring(2,6).toUpperCase() + "-" +
+                        Math.random().toString(36).substring(2,6).toUpperCase() + "-" +
+                        Math.random().toString(36).substring(2,6).toUpperCase() + "-" +
                         Math.random().toString(36).substring(2,6).toUpperCase();
-                    
+
                     const expiresAt = now + (expiryHours * 60 * 60 * 1000);
 
-                    await update(userRef, {
-                        lastGeneratedKey: newKey,
-                        keyExpiresAt: expiresAt,
-                        keyGeneratedAt: now
-                    });
+                    // Robust key-generation counter: use Firebase's atomic
+                    // increment() so every generation bumps keyGenCount by
+                    // exactly 1, regardless of how many times this device
+                    // has generated before, and regardless of any race
+                    // between concurrent requests. A plain update() with a
+                    // hand-read "oldCount + 1" value is NOT safe here (two
+                    // concurrent reads can both see the same stale count
+                    // and both write the same "+1" result, silently losing
+                    // a count) — increment() is a server-side RTDB op that
+                    // always applies on top of whatever value is actually
+                    // stored, so it can never get stuck re-writing 1.
+                    let countApplied = false;
+                    if (typeof increment === 'function') {
+                        try {
+                            await update(userRef, {
+                                lastGeneratedKey: newKey,
+                                keyExpiresAt: expiresAt,
+                                keyGeneratedAt: now,
+                                keyGenCount: increment(1)
+                            });
+                            countApplied = true;
+                        } catch (eInc) {
+                            console.warn('keyGenCount increment() failed, falling back to transaction', eInc);
+                        }
+                    }
+                    if (!countApplied) {
+                        // Fallback for SDKs/builds where increment() isn't
+                        // available: a real transaction (not a plain
+                        // read-then-update) so the count still can't be
+                        // lost to a race — it re-runs against the latest
+                        // server value if another write lands in between.
+                        try {
+                            await runTransaction(userRef, (cur) => {
+                                cur = cur || {};
+                                const prevCount = Number(cur.keyGenCount);
+                                cur.keyGenCount = (Number.isFinite(prevCount) && prevCount >= 0 ? prevCount : 0) + 1;
+                                cur.lastGeneratedKey = newKey;
+                                cur.keyExpiresAt = expiresAt;
+                                cur.keyGeneratedAt = now;
+                                return cur;
+                            });
+                        } catch (eTx) {
+                            console.warn('keyGenCount transaction failed, writing without count bump', eTx);
+                            await update(userRef, { lastGeneratedKey: newKey, keyExpiresAt: expiresAt, keyGeneratedAt: now });
+                        }
+                    }
                     displayKeyInfo(newKey, expiresAt, expiryHours);
                 } else {
                     localStorage.removeItem('dgxen_device_id');
